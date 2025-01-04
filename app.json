@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "SupportiveSouls",
+    "slug": "SupportiveSoulsApp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+
+    "splash": {
+      "image": "./assets/images/splash_icon.png",
+      "resizeMode": "contain",
+      "backgroundColor":"#ffffff",
+      "ios": {
+        "fadeOutDuration": 2000
+      },
+      "android": {
+        "fadeOutDuration": 2000
+      }
+    },
+
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kalidasan.SupportiveSouls",
+      "usesNonExemptEncryption": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/splash_icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.kalidasan.SupportiveSouls"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/supportiveApp_icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash_icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "776962eb-1cc8-4fdd-8a64-e237c0a6acd9"
+      }
+    }
+  }
+}
