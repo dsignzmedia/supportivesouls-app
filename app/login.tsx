@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Image, SafeAreaView, ImageBackground, Platform, Dimensions, TextInput } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, Image,ScrollView, SafeAreaView, ImageBackground, Platform, Dimensions, TextInput,Alert } from "react-native";
 import { router } from "expo-router";
 import { useNavigation } from '@react-navigation/native';
+import { signin, storeAsyncData } from "./services/service";
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,8 +23,6 @@ export default function LoginPage() {
 
   const handleSubmit = () => {
 
-    router.push('/(tabs)/Dashboard');
-
     let valid = true;
     // Reset error states
     setEmailError("");
@@ -41,11 +40,36 @@ export default function LoginPage() {
       valid = false;
     }
 
-    // if (valid) {
-    //   openLogin(); // Proceed to login if valid
-    // }
+    if (valid) {
+      openLogin(); 
+    }
   };
 
+  
+ async function openLogin() {
+    const loginData = {email, password};
+    const res = await signin(loginData);
+    console.warn('email => ', email);
+    console.warn('password => ',  password);
+    // console.warn('res => ', res);  
+    // console.warn('email=>',email);
+    // console.warn('password=>',password);
+    // router.push('/(tabs)/Dashboard');
+    
+      if (res?.status === 200 && res.success) {
+        console.log("Login successful:", res.message);
+        // Navigate to dashboard or next screen
+
+        await storeAsyncData('userDetails', res.user);
+        router.push('/(tabs)/Dashboard');
+      } else {
+        alert('Login credientals are invalid....')
+        console.warn("Login failed:", res.message);
+        if (res.errors.email) setEmailError(res.errors.email);
+        if (res.errors.password) setPasswordError(res.errors.password);
+        
+  }
+} 
 
   return (
     <View style={styles.container}>
@@ -62,6 +86,7 @@ export default function LoginPage() {
         <ImageBackground source={require('../assets/images/dashboard/bottom_image.png')} style={styles.bottomImage}>
         <View style={styles.overlay} />
 
+        <ScrollView >
         <View style={styles.bottomContent}>
 
           <Text style={styles.heading}>Sign in your account</Text>
@@ -109,6 +134,8 @@ export default function LoginPage() {
           </View>
           </View>
 
+          </ScrollView>
+
         </ImageBackground>
       </View>
     </View>
@@ -119,6 +146,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "space-between",
+    // backgroundColor:'#fff',
   },
   logoContainer: {
     alignItems: "center",

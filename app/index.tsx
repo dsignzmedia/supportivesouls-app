@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5", // Background color for the loading page
+    // backgroundColor: "#f5f5f5", // Background color for the loading page
   },
   loadingText: {
     marginTop: 20,

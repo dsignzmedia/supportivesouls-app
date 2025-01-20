@@ -1,16 +1,55 @@
 import { View, Text, TouchableOpacity, StyleSheet ,ScrollView,Image,Platform,Pressable} from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { router } from "expo-router";
 import { useNavigation } from '@react-navigation/native';
 import { Link } from "expo-router";
+import { scholarDetails } from '../services/service';
+import { getAsyncData, yourDonation } from '../services/service';
+
 
 
 const Dashboard = ({children}:any) => {
 
   const [selectedTab, setSelectedTab] = useState('Financial Support');
   const [expandedIndexes, setExpandedIndexes] = useState([0]);
+  const [yourTotalDonation , setYourTotalDonation] = useState('');
+  const [scholarsBenefited, setScholarsBenefited] = useState(0);
+  const [userDetails, setUserDetails] = useState({name: '', email: ''});
+
+  const setDetails = async () => {
+      const data:any = await getAsyncData('userDetails');
+      setUserDetails(data);
+      console.warn('data => ', data);
+    }
+    useEffect(() => {
+        setDetails();
+      }, []);
+
+  const yourDonationInit = async () => {
+    const data = await getAsyncData('userDetails')
+    const donationDetails = await yourDonation(data.id); 
+    if (donationDetails) {
+      console.warn('Donation Details => ', donationDetails);
+      setYourTotalDonation(donationDetails.total); // Set the total donation amount
+      setScholarsBenefited(donationDetails.totalScholars); // Set the total scholars benefited
+    }
+
+    if(data){
+      const total = await yourDonation(data.id);
+      const donationDetails = await yourDonation(data.id);
+      console.warn('total => ', total);
+      setYourTotalDonation(total.total)
+    }
+    else{
+      console.log('total is empty')
+    }
+  };
+  
+    useEffect(() => {
+      yourDonationInit();
+    }, []);
 
    const handleToggle = (index) => {
       setExpandedIndexes((prev) =>
@@ -23,17 +62,60 @@ const Dashboard = ({children}:any) => {
   const openTheDonation = ()=>{
     router.push('/(tabs)/Donations');
   }
-  const openTheScholars = ()=>{
-    router.push('/(tabs)/Scholars');
+  
+  const openTheScholars = async ()=>{
+
+    const data = await getAsyncData('userDetails'); // Get user details from async storage or context
+    if (data) {
+      const userDetails = await scholarDetails(data.id);  // Pass user ID to scholarDetails function
+      console.warn('userDetails => ', userDetails);
+  
+      if (userDetails?.success) {  // Check if the data is successfully fetched
+        // Pass user details to the next page
+        router.push({
+          pathname: '/(tabs)/Scholars',
+          params: { userDetails: JSON.stringify(userDetails.scholarDetails) },
+        });
+      } else {
+        console.error('Failed to fetch user details!');
+      }
+    } else {
+      console.log('userDetails is empty');
+    }
   }
 
   
+//   useEffect(() => {
+//     const getScholors = async () => {
+//       try {
+//         const response = await getScholars();
+//         const parsedResponse = JSON.parse(response);
+// console.log("parsedResponse" , parsedResponse);
+
+
+//         // The response is already a JavaScript object, no need to parse it again
+//         console.log('Total Donation:', response.total_donation);
+        
+//         if (response && response.total_donation !== undefined) {
+//           setYourDonation(response.total_donation);
+//         } else {
+//           console.error('Error: Donation data is missing or invalid.');
+//         }
+//       } catch (error: any) {
+//         console.error('Error fetching team details:', error.message);
+//       }
+//     };
+    
+//     getScholors();
+//   }, []);
+  
+
 
   return (
     <View style={styles.accordaincontainer}>
       <HeadersImage>
         <View style={styles.userContent}>
-          <Text style={styles.username}>Good Morning Selvakumar</Text>
+          <Text style={styles.username}>Hello {userDetails.name}</Text>
         </View>
       </HeadersImage>
       
@@ -50,7 +132,7 @@ const Dashboard = ({children}:any) => {
                     resizeMode="contain"
                   />
                   <View style={styles.donationContent}>
-                    <Text style={styles.donationAmount}>₹ 25,000.00</Text>
+                    <Text style={styles.donationAmount}>₹ {yourTotalDonation}</Text>
                     <Text style={styles.donationLabel}>Your Donation</Text>
                   </View>
                   </TouchableOpacity>
@@ -63,7 +145,7 @@ const Dashboard = ({children}:any) => {
                     resizeMode="contain"
                   />
                   <View style={styles.scholarContent}>
-                    <Text style={styles.scholarAmount}>2</Text>
+                    <Text style={styles.scholarAmount}>{scholarsBenefited}</Text>
                     <Text style={styles.scholarLabel}>Scholars Benefited</Text>
                   </View>
                   </TouchableOpacity>
@@ -270,7 +352,8 @@ const styles = StyleSheet.create({
   donationContent: {
     flexDirection: 'column',
     justifyContent: 'center',
-    alignItems:'flex-end'
+    alignItems:'flex-end',
+    objectFit:'cover',
   },
   donationAmount: {
     color: '#000000',
