@@ -322,9 +322,9 @@ const Jionprogram = ({children}:any) => {
                 <FloatingLabelInput
                     label="Address"
                     value={address}
-                    // keyboardType="phone-pad"
-                    maxLength={10}
-                    style={styles.inputStyles}
+                    multiline={true} // Enable multiline
+                    numberOfLines={4} // Adjust height
+                    style={[styles.inputStyles, { height: 100 }]} // Add height to the input
                     containerStyles={styles.containerStyles}
                     labelStyles={styles.labelStyles}
                     onChangeText={value => setAddress(value)}

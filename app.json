@@ -1,38 +1,23 @@
 {
   "expo": {
     "name": "SupportiveSouls",
-    "slug": "SupportiveSoulsApp",
+    "slug": "supportive-souls",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
-    "splash": {
-      "image": "./assets/images/splash_icon.png",
-      "resizeMode": "contain",
-      "backgroundColor":"#ffffff",
-      "ios": {
-        "fadeOutDuration": 2000
-      },
-      "android": {
-        "fadeOutDuration": 2000
-      }
-    },
-
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kalidasan.SupportiveSouls",
+      "bundleIdentifier": "com.sapareshan.SupportiveSouls",
       "usesNonExemptEncryption": false
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/splash_icon.png",
-        "backgroundColor": "#ffffff"
+
       },
-      "package": "com.kalidasan.SupportiveSouls"
+      "package": "com.sapareshan.SupportiveSouls"
     },
     "web": {
       "bundler": "metro",
@@ -47,7 +32,7 @@
           "image": "./assets/images/splash_icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#FFFFFF"
         }
       ]
     ],
@@ -56,8 +41,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "776962eb-1cc8-4fdd-8a64-e237c0a6acd9"
+        "projectId": "8f3c91ba-da20-48f3-82a8-e3df053c7e40"
       }
-    }
+    },
+    "owner": "sapareshan"
   }
 }

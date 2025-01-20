@@ -1,13 +1,76 @@
-import { View, Text, StyleSheet, TouchableOpacity,ScrollView } from 'react-native';
-import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity,ScrollView,Modal,Image ,Platform} from 'react-native';
+import React, { useState, useEffect } from 'react';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { router } from 'expo-router';
+import axios from 'axios';
+import { getAsyncData, scholarDetails } from '../services/service';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+
 
 const Scholars = ({children}:any) => {
-  const openScholarsDetails =()=>{
-    // alert('ok');
-    router.push('/Scholarsdetails')
-  }
+
+  const [modalVisible, setModalVisible] = useState(false);
+  // db value show 
+  const [totallyBenifited, setTotallyBenifited] = useState(0);
+  const [scholarsData, setScholarsData] = useState([]);
+  const init = async () => {
+    const user = await getAsyncData('userDetails');
+    const data = await scholarDetails(user.id);
+
+    // console.warn('data => ', data);
+    if(data.success && data.scholarDetails.length) {
+       let {scholarDetails} = data;
+       scholarDetails = scholarDetails.filter(e => e.donation_type != 'social_impact');
+        setScholarsData(scholarDetails);
+        setTotallyBenifited(scholarDetails.length);
+    }
+  };
+
+  useEffect(() => {
+    init();
+  }, []);
+
+  // scholars date
+  // Format the date using Intl.DateTimeFormat
+  const formatDate = (dateString) => {
+    if (!dateString) return ''; // Handle empty or undefined date
+    const date = new Date(dateString); // Parse the date
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(date); // Format as "23 May 2024"
+  }; 
+  // Function to open the modal
+  const openScholarsDetails = (id: any) => {
+    console.warn('id =>',id)
+    return router.push(`/Scholarsdetails?id=${id}`);
+  
+    // setModalVisible(true);
+  };
+
+  // Function to close the modal
+  const closeScholarsDetails = () => {
+    setModalVisible(false);
+  };
+
+   const [selectedTab, setSelectedTab] = useState('Financial Support');
+      // Set the default expanded accordion to index 0 (Guardian Angels)
+      const [expandedIndexes, setExpandedIndexes] = useState([0]);
+  
+      const handleToggle = (index) => {
+          // Toggle the accordion; if already expanded, remove it from the list
+          setExpandedIndexes((prev) =>
+          prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+          );
+      };
+      // const navigation = useNavigation();
+
+  // const openScholarsDetails =()=>{
+  //   // alert('ok');
+  //   router.push('/Scholarsdetails')
+  // }
   const scholarData = [
     {
       name: 'Karthick N',
@@ -45,11 +108,11 @@ const Scholars = ({children}:any) => {
 
         {/* Scholars count */}
         <Text style={styles.supportText}>
-          You have supported <Text style={styles.highlightText}>2 Scholars</Text>
+          You have supported <Text style={styles.highlightText}>{totallyBenifited} Scholars</Text>
         </Text>
 
         {/* Scholars list */}
-        {scholarData.map((scholar, index) => (
+        {scholarsData.map((scholar: any, index) => (
           <View key={index} style={styles.card}>
             {/* Scholar name */}
             <View style={styles.labelGroup}>
@@ -72,26 +135,30 @@ const Scholars = ({children}:any) => {
             {/* Amount and Date row */}
             <View style={styles.row}>
               <View style={styles.labelGroup}>
-                <Text style={styles.amount}>{scholar.amount}</Text>
+                <Text style={styles.amount}>₹ {new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(scholar.total_scholar_amount)}</Text>
                 <Text style={styles.label}>Amount</Text>
               </View>
               <View style={styles.labelGroup}>
-                <Text style={styles.date}>{scholar.date}</Text>
+                <Text style={styles.date}>{formatDate(scholar.latest_donation_date)}</Text>
                 <Text style={styles.label}>Date</Text>
               </View>
             </View>
 
             {/* More Information button */}
-            <TouchableOpacity style={styles.button} onPress={openScholarsDetails}>
+            <TouchableOpacity style={styles.button} onPress={() => openScholarsDetails(scholar.user_id)} activeOpacity={0.5}>
               <Text style={styles.buttonText}>More Information</Text>
             </TouchableOpacity>
           </View>
         ))}
         </View>
       </ScrollView>
+
+       
+
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -186,6 +253,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+ 
 });
 
 export default Scholars;

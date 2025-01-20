@@ -1,13 +1,16 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Platform,Linking } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { Ionicons } from '@expo/vector-icons';
-
-
+import { router } from "expo-router";
+import { getAsyncData, getUserById } from '../services/service';
+import AntDesign from '@expo/vector-icons/AntDesign';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Fontisto from '@expo/vector-icons/Fontisto';
 
 const SectionsData = [
   {
-    index: 2, // Changed index from 0 to 2
+    index: 2, 
     title: 'About Us',
     content: 'This is the About Us content. Here you can describe your organization or mission.',
   },
@@ -50,67 +53,86 @@ const ProfileData = [
   },
 ];
 
-// Function to handle Instagram link
-// const handleInstagramPress = async () => {
-//   try {
-//     const instagramUrl = 'https://www.instagram.com/supportive.souls?igsh=MXJvY3Z6d2RwbWhldg==';
-//     const supported = await Linking.canOpenURL(instagramUrl);
-
-//     if (supported) {
-//       await Linking.openURL(instagramUrl);
-//     } else {
-//       console.log("Can't open Instagram URL");
-//     }
-//   } catch (error) {
-//     console.error("Error opening Instagram:", error);
-//   }
-// };
 
 const handleInstagramPress = (name:any) => {
   const url = `https://www.instagram.com/supportive.souls?igsh=MXJvY3Z6d2RwbWhldg===${encodeURIComponent(name)}`;
   Linking.openURL(url);
 };
-// const handleYouTubePress = async () => {
-//   try {
-//     const youtubeUrl = 'https://www.youtube.com/@SupportiveSouls'; 
-//     const supported = await Linking.canOpenURL(youtubeUrl);
 
-//     if (supported) {
-//       await Linking.openURL(youtubeUrl);
-//     } else {
-//       console.log("Can't open YouTube URL");
-//     }
-//   } catch (error) {
-//     console.error("Error opening YouTube:", error);
-//   }
-// };
 const handleYouTubePress = (name:any) => {
   const url = `https://www.youtube.com/@SupportiveSouls=${encodeURIComponent(name)}`;
   Linking.openURL(url);
 };
 
-// const handleLinkedInPress = async () => {
-//   try {
-//     const linkedinUrl = 'https://www.linkedin.com/search/results/all/?fetchDeterministicClustersOnly=true&heroEntityKey=urn%3Ali%3Aorganization%3A90635745&keywords=supportive%20souls&origin=RICH_QUERY_SUGGESTION&position=0&searchId=778eac2c-6e8b-4f48-9b0c-93a9a77fdd95&sid=Y4j&spellCorrectionEnabled=false'; // Replace with your LinkedIn page
-//     const supported = await Linking.canOpenURL(linkedinUrl);
 
-//     if (supported) {
-//       await Linking.openURL(linkedinUrl);
-//     } else {
-//       console.log("Can't open LinkedIn URL");
-//     }
-//   } catch (error) {
-//     console.error("Error opening LinkedIn:", error);
-//   }
-// };
 const handleLinkedInPress = (name:any) => {
   const url = `https://www.linkedin.com/search/results/all/?fetchDeterministicClustersOnly=true&heroEntityKey=urn%3Ali%3Aorganization%3A90635745&keywords=supportive%20souls&origin=RICH_QUERY_SUGGESTION&position=0&searchId=778eac2c-6e8b-4f48-9b0c-93a9a77fdd95&sid=Y4j&spellCorrectionEnabled=false'=${encodeURIComponent(name)}`;
   Linking.openURL(url);
 };
 
+// const openProfile = async () => {
+//     const userDetails = await getUserById(17); //NOTE: need to get user id from async storage when user logged in
+//     console.warn('userDetails => ', userDetails)
+//     // router.push('/userProfile');
+//     if (userDetails?.user) {
+//       router.push({
+//         pathname: '/userProfile',
+//         params: { userDetails: userDetails.user }, 
+//       });
+//     } else {
+//       console.error('Failed to fetch user details!');
+//     }
+    
+// }
+const openProfile = async () => {
+  const data = await getAsyncData('userDetails')
+  if(data){
+    const userDetails = await getUserById(data.id);
+    console.warn('userDetails => ', userDetails);
+  
+    if (userDetails?.user) {
+      router.push({
+        pathname: '/userProfile',
+        params: { userDetails: JSON.stringify(userDetails.user) }, 
+      });
+    } else {
+      console.error('Failed to fetch user details!');
+    }
+  }
+  else{
+    console.log('userDtails is empty')
+  }
+  
+};
 
+  const openAboutUs = ()=>{
+    router.push('/about');
+  }
+  const openFocus = ()=>{
+    router.push('/focus');
+  }
+  const openScholars = ()=>{
+    router.push('/scholarship');
+  }
+  const openPhotoGalary = ()=>{
+    router.push('/photosgalary');
+  }
+  const openContact = ()=>{
+    router.push('/contactus');
+  }
+  
 const More = () => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [userDetails, setUserDetails] = useState({name: '', email: ''});
+  const setDetails = async () => {
+    const data:any = await getAsyncData('userDetails');
+    setUserDetails(data);
+    console.warn('data => ', data);
+  }
+
+  useEffect(() => {
+    setDetails();
+  }, []);
 
   const handleToggle = (index: number) => {
     setExpandedIndex((prev) => (prev === index ? null : index));
@@ -118,6 +140,7 @@ const More = () => {
   
 
   return (
+    
     <View style={styles.container}>
       <HeadersImage>
         <View style={styles.scholarsContent}>
@@ -131,27 +154,46 @@ const More = () => {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
             <Image style={styles.mapMedia} source={require('../../assets/images/dashboard/profileimage.png')} />
             <View style={{ marginLeft: 15 }}>
-              <Text style={styles.profileName}>Selvakumar D</Text>
-              <Text style={styles.profileEmail}>selva@dselva.com</Text>
+              <Text style={styles.profileName}>{userDetails.name}</Text>
+              <Text style={styles.profileEmail}>{userDetails.email}</Text>
             </View>
           </View>
 
           {/* Accordions for Supportive Souls and Scholar Details */}
           <View>
           <Text  style={styles.sectionHeader}>account</Text>
-            {[...ProfileData].map((item, index) => (
+            {/* {[...ProfileData].map((item, index) => (
+              <TouchableOpacity onPress={openProfile}>
               <AccordionItem
                 key={index}
                 title={item.title}
                 content={item.content}
                 expanded={expandedIndex === item.index}
                 onPress={() => handleToggle(item.index)}
-                styleType="profile" // Separate style for Profile
+                styleType="profile" 
               />
-            ))}
+              </TouchableOpacity>
+            ))} */}
+
+            <TouchableOpacity onPress={openProfile}>
+                <View style={{borderWidth:1,padding:15,borderRadius:8,borderColor:'#E0E0E0',flexDirection:'row',justifyContent:'space-between'}}>
+                  <View style={{flexDirection:'row',}}>
+                  <Ionicons name="person-circle-outline" size={20} color="black" />
+                  <Text style={{fontSize:15,marginLeft:10,}}>Profile</Text>
+                  </View>
+                
+                    <Ionicons
+                      name={ "chevron-forward" }
+                      size={20}
+                      color="#525252"
+                      style={styles.icon}
+                    />
+                </View>
+            </TouchableOpacity>
+
 
             <Text  style={styles.sectionHeader}>Supportive souls</Text>
-            <View style={styles.sectionContent}>
+            {/* <View style={styles.sectionContent}>
             {[...SectionsData].map((item, index) => (
               <AccordionItem
                 key={index}
@@ -162,7 +204,59 @@ const More = () => {
                 styleType="supportive" // Separate style for Supportive Souls
               />
             ))}
-            </View>
+            </View> */}
+            <TouchableOpacity onPress={openAboutUs}>
+                <View style={styles.supportive_content}>
+                  <View style={{flexDirection:'row',}}>
+                    <AntDesign name="exclamationcircleo" size={20} color="black" />
+                    <Text style={{fontSize:15,marginLeft:10,}}>About Us</Text>
+                  </View>
+                    <Ionicons name={ "chevron-forward" } size={20} color="#525252" style={styles.icon}/>
+                </View>
+            </TouchableOpacity>
+
+            {/* Focus */}
+            <TouchableOpacity onPress={openFocus}>
+            <View style={styles.supportive_content}>
+                <View style={{flexDirection:'row',}}>
+                    {/* <AntDesign name="exclamationcircleo" size={20} color="black" /> */}
+                    <MaterialIcons name="center-focus-weak" size={20} color="black" />
+                    <Text style={{fontSize:15,marginLeft:10,}}>Focus</Text>
+                  </View>
+                    <Ionicons name={ "chevron-forward" } size={20} color="#525252" style={styles.icon}/>
+                </View>
+            </TouchableOpacity>
+            {/* Scholarship */}
+            <TouchableOpacity onPress={openScholars}>
+            <View style={styles.supportive_content}>
+                <View style={{flexDirection:'row',}}>
+                  <MaterialIcons name="cast-for-education" size={20} color="black" />
+                    <Text style={{fontSize:15,marginLeft:10,}}>Scholarship</Text>
+                  </View>
+                    <Ionicons name={ "chevron-forward" } size={20} color="#525252" style={styles.icon}/>
+                </View>
+            </TouchableOpacity>
+
+            {/* Photo Gallery */}
+            <TouchableOpacity onPress={openPhotoGalary}>
+            <View style={styles.supportive_content}>
+                <View style={{flexDirection:'row',}}>
+                  <Fontisto name="photograph" size={20} color="black" />
+                  <Text style={{fontSize:15,marginLeft:10,}}>Photo Gallery</Text>
+                  </View>
+                    <Ionicons name={ "chevron-forward" } size={20} color="#525252" style={styles.icon}/>
+              </View>
+            </TouchableOpacity>
+            {/* Contact Us */}
+            <TouchableOpacity onPress={openContact}>
+                <View style={{borderBottomWidth:1,padding:15,borderRadius:8,borderColor:'#E0E0E0',flexDirection:'row',justifyContent:'space-between'}}>
+                  <View style={{flexDirection:'row',}}>
+                  <MaterialIcons name="contact-support" size={20} color="black" />
+                  <Text style={{fontSize:15,marginLeft:10,}}>Contact Us</Text>
+                  </View>
+                    <Ionicons name={ "chevron-forward" } size={20} color="#525252" style={styles.icon}/>
+                </View>
+            </TouchableOpacity>
           </View>
 
         {/* socail media  */}
@@ -387,6 +481,15 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     color: '#525252',
     textTransform:"uppercase",
+  },
+  supportive_content:{
+    borderBottomWidth:1,
+    padding:15,
+    borderRadius:8,
+    borderColor:'#E0E0E0',
+    flexDirection:'row',
+    justifyContent:'space-between',
+    marginBottom:10
   },
   sectionContent:{
     borderWidth:1,

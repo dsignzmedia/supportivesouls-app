@@ -1,11 +1,49 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform,Image } from 'react-native';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { FontAwesome } from '@expo/vector-icons'; 
 import { router } from "expo-router";
+import { getAsyncData, yourDonation } from '../services/service';
+
 
 const Donations = ({ children }: any) => {
+  const [yourTotalDonation , setYourTotalDonation] = useState('');
+  const [paymentDates,setPaymentDates] =useState('');
 
+  const yourDonationInit = async () => {
+    const data = await getAsyncData('userDetails')
+    if(data){
+      const total = await yourDonation(data.id);
+      console.warn('total => ', total);
+      setYourTotalDonation(total.total)
+
+      // Get the current year and calculate last year
+    const currentYear = new Date().getFullYear();
+    const lastYear = currentYear - 1;
+
+      // Split dates if they are comma-separated and format them
+      const formattedDates = total.payment_dates
+        .split(',')
+        .map((date) => new Date(date))
+        .filter((date) => date.getFullYear() === lastYear) // Only include dates from last year
+        .map((date) =>
+          `${date.getDate()} ${date.toLocaleString('en-US', { month: 'short' })} ${date.getFullYear()}`
+        )
+        .join(', ');
+
+        setPaymentDates(formattedDates);
+
+    }
+    else{
+      console.log('total is empty')
+    }
+    
+  };
+  
+
+useEffect(() => {
+      yourDonationInit();
+    }, []);
   const openTheLogin = ()=>{
     router.push('../login');
   }
@@ -33,7 +71,7 @@ const Donations = ({ children }: any) => {
                 />            
               </View>
               <View style={styles.textContainer}>
-                <Text style={styles.amountText}>₹ 25,000.00</Text>
+                <Text style={styles.amountText}>₹ {yourTotalDonation}</Text>
                 <Text style={styles.labelText}>Your Donation</Text>
               </View>
             </View>
@@ -50,7 +88,7 @@ const Donations = ({ children }: any) => {
                 />             
                 </View>
               <View style={styles.textContainer}>
-                <Text style={styles.dateText}>25 Jul 2024</Text>
+                <Text style={styles.dateText}>{paymentDates}</Text>
                 <Text style={styles.labelText}>Donation Date</Text>
               </View>
             </View>
