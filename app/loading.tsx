@@ -1,13 +1,18 @@
-import React , { useState }from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Image,KeyboardAvoidingView, SafeAreaView,ImageBackground,Platform ,Dimensions,Modal,TextInput} from "react-native";
+import React , { useRef, useState,useCallback }from "react";
+import { StyleSheet, Text, View, TouchableOpacity, Image,KeyboardAvoidingView,Keyboard, SafeAreaView,ImageBackground,Platform ,Dimensions,Modal,TextInput,Alert} from "react-native";
 import { navigate } from 'expo-router/build/global-state/routing';
+import { useNavigation } from '@react-navigation/native'; 
 import { router } from "expo-router";
 import { FloatingLabelInput } from "react-native-floating-label-input";
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { Dropdown } from 'react-native-element-dropdown';
 import { ScrollView } from 'react-native-gesture-handler';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-
+import CustomBottomsheetModel from "@/components/common/CustomBottomsheetModel";
+import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import PhoneInput from 'react-native-phone-number-input';   
+import axios from 'axios';
+import { JionWithUsForm } from '@/app/services/service';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,28 +26,33 @@ const adjustedHeight = Platform.OS === "ios" ? height - 285 : height - 80;
 
 export default function LoadingPage() {
 
-  const [isModalVisible, setModalVisible] = useState(false);
-
-  const openJoinWithUs = () => {
-    setModalVisible(true);
-  };
-
-  const closeJoinWithUs = () => {
-    setModalVisible(false);
-  };
+  
+  // const openJoinWithUs = () => {
+  //   setModalVisible(true);
+  // };
+ 
+  // const closeJoinWithUs = () => {
+  //   setModalVisible(false);
+  // };
 
     // form 
-      const [name, setName] = useState('');
-      const [email, setEmail] = useState('');
-      const [pan, setPan] = useState('');
-      const [mobileNumber, setMobileNumber] = useState('');
-      const [address, setAddress] = useState('');
-      const [birthday, setBirthday] = useState('');
-      const [day, setDay] = useState('');
-      const [month, setMonth] = useState('');
-      const [year, setYear] = useState('');
-      const [gender, setGender] = useState('');
+    const [flashMessage, setFlashMessage] = useState({ type: '', message: '' });
 
+      const [name, setName] = useState('');
+       const [email, setEmail] = useState('');
+       const [pan, setPan] = useState('');
+       // const [mobileNumber, setMobileNumber] = useState('');
+       const [address, setAddress] = useState('');
+       const [city, setCity] = useState('');
+       const [state, setState] = useState('');
+       
+       const [postalcode, setPostalcode] = useState('');
+
+       const [birthday, setBirthday] = useState('');
+       const [day, setDay] = useState('');
+       const [month, setMonth] = useState('');
+       const [year, setYear] = useState('');
+       const [gender, setGender] = useState('');
      // date picker
     
         const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -117,26 +127,126 @@ export default function LoadingPage() {
         ];
       
       
-          const [selectedCountry, setSelectedCountry] = useState('India');
-          const countries = ['India', 'United States', 'United Kingdom', 'Canada', 'Australia'];
-          // country select funtion end
-      
-          const [text, setText] = useState('');
-          // 
-          const handleSubmit = () => {
-            // Handle form submission logic here
-            console.log('Form Data:', {
-                name,
-                email,
-                pan,
-                mobileNumber,
-                address,
-                birthday: `${day}/${month}/${year}`,
-                gender,
-            });
-            alert('Form submitted successfully!');
-        };
+
+        const navigation = useNavigation(); 
+        
+        const handleSubmit = async () => {
+    if (!name || !email || !formattedNumber || !address || !city || !state || !selected || !postalcode) {
+      setFlashMessage({ type: 'error', message: 'Please fill in all required fields.' }); 
+      setTimeout(() => setFlashMessage({ type: '', message: '' }), 1000);
+      return;
+    }
+
+    try {
+      const formData = {
+        name: name,
+        email: email,
+        phone: formattedNumber,
+        address: address,
+        city: city,
+        state: state,
+        country: selected.label,
+        postal_code: postalcode,
+      };
+
+      console.warn('formData => ', formData);
+      const response = await JionWithUsForm(formData);
+
+      console.log('API Response:', response); // Debug response
+      if (response && response.success) {
+        setFlashMessage({ type: 'success', message: 'Form submitted successfully!' }); // Success flash message
+        setTimeout(() => setFlashMessage({ type: '', message: '' }), 1000);
+        // Redirect after a short delay to show the message
+        setTimeout(() => {
+          secondSheetRef.current?.close();
+          setName('');
+          setEmail('');
+          setMobileNumber('');
+          setAddress('');
+          setCity('');
+          setState('');
+          setSelected(null);
+          setPostalcode('');
+        }, 1000);
+      } else if (response && response.message) {
+        setFlashMessage({ type: 'error', message: response.message }); // Backend error message
+      } else {
+        setFlashMessage({ type: 'error', message: 'Unexpected response. Please try again.' });
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setFlashMessage({ type: 'error', message: `An error occurred. Please try again. ${error.message}` });
+    }
+  };
+
+  const handleCancel = () => {
+    // Reset the input value
+    // Close the bottom sheet
+    setName('');
+    setEmail('');
+    setMobileNumber('');
+    setAddress('');
+    setCity('');
+    setState('');
+    setSelected(null);
+    setPostalcode('');
+  
+    secondSheetRef.current?.close();
+  };
+
+
+  const secondSheetRef = useRef<BottomSheetModal>(null);
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const handlePresentModalPress = useCallback(() => {
+    secondSheetRef.current?.present();
+    console.log("Bottom sheet opened");
+  }, []);
+
+  const handleDismiss = useCallback(() => {
+    secondSheetRef.current?.close();
+    console.log("Dismiss button pressed");
+  }, []);
+
+  // phone number
+    const [selectedCountry, setSelectedCountry] = useState('India');
+      const countries = ['India', 'United States', 'United Kingdom', 'Canada', 'Australia'];
+      // country select funtion end
+  
+      const [text, setText] = useState('');
+  
+      const [phone, setMobileNumber] = useState('');
+      const [formattedNumber, setFormattedNumber] = useState('');
+      const [countryCode, setCountryCode] = useState('');
+  
+      const handleVerify = () => {
+          if (!formattedNumber) {
+            Alert.alert('Error', 'Please enter a valid phone number.');
+            return;
+          }
+          Alert.alert('Success', `Phone Number: ${formattedNumber}\nCountry Code: +${countryCode}`);
+      };
+  
+
+
   return (
+    
+    <BottomSheetModalProvider>
+
+{/* <KeyboardAvoidingView behavior="padding" style={{ flex: 1, padding: 16 }}> */}
+
+
+      {flashMessage.message && (
+        <View
+          style={[
+            styles.flashMessage,
+            flashMessage.type === 'success' ? styles.success : styles.error,
+          ]}
+        >
+          <Text style={styles.flashText}>{flashMessage.message}</Text>
+        </View>
+      )}
+
+
       <View style={styles.container}>
         
 
@@ -171,7 +281,7 @@ export default function LoadingPage() {
             </TouchableOpacity>
 
             {/* onPress={openJoinWithUs} */}
-            <TouchableOpacity style={styles.joinButton} >
+            <TouchableOpacity style={styles.joinButton} onPress={handlePresentModalPress}>
               <Text style={styles.joinButtonText}>Join With Us</Text>
             </TouchableOpacity>
             
@@ -179,248 +289,277 @@ export default function LoadingPage() {
           </ImageBackground>
 
           {/* Modal */}
-          <Modal
-              transparent={true}
-              visible={isModalVisible}
-              animationType="slide"
-              onRequestClose={closeJoinWithUs}
-            >
-              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    style={{ flex: 1 }}>
-              
-              <View style={styles.modalOverlay}>
-              
-                <View style={styles.modalContent}>
-                  <Text>Join With Us</Text>
-                  <ScrollView>
-            <View style={{padding:15}}>
-
-            <View>
-                {/* <Text style={styles.formHeader}>
-                    Please fill the below form to join the Guardian Angels Program
-                </Text> */}
-                <Text style={styles.formHeader}>Please fill the below form to join the <Text style={styles.highlightText}>Guardian Angels</Text> Program</Text>
-            </View>
-
-            {/* Name Field */}
-            <FloatingLabelInput
-                label="Name"
-                value={name}
-                style={styles.inputStyles}
-                containerStyles={styles.containerStyles}
-                labelStyles={styles.labelStyles}
-                onChangeText={value => setName(value)}
-            />
-            {/* Email Field */}
-            <FloatingLabelInput
-                label="Email"
-                value={email}
-                keyboardType="email-address"
-                style={styles.inputStyles}
-                containerStyles={styles.containerStyles}
-                labelStyles={styles.labelStyles}
-                onChangeText={value => setEmail(value)}
-            />
-            
-
-            {/* PAN Field */}
-            <FloatingLabelInput
-                label="PAN"
-                value={pan}
-                style={styles.inputStyles}
-                containerStyles={styles.containerStyles}
-                labelStyles={styles.labelStyles}
-                onChangeText={value => setPan(value)}
-            />
-            {/* Age Section */}
-            {/* <View style={styles.ageContainer}> */}
-                {/* <Text style={styles.agelabel}>Age</Text> */}
-                {/* <View style={styles.row}> */}
-                    {/* Day Dropdown */}
-                    {/* <DropDownPicker
-                    listMode='SCROLLVIEW'
-                    open={dayOpen}
-                    value={selectedDay}
-                    items={days}
-                    setOpen={setDayOpen}
-                    setValue={setSelectedDay}
-                    placeholder="Day"
-                    style={styles.agedropdown}
-                    dropDownContainerStyle={styles.dropdownContainer}
-                    /> */}
-
-                    {/* Month Dropdown */}
-                    {/* <DropDownPicker
-                    listMode='SCROLLVIEW'
-                    open={monthOpen}
-                    value={selectedMonth}
-                    items={months}
-                    setOpen={setMonthOpen}
-                    setValue={setSelectedMonth}
-                    placeholder="Month"
-                    style={styles.agedropdown}
-                    dropDownContainerStyle={styles.dropdownContainer}
-                    /> */}
-
-                    {/* Year Dropdown */}
-                    {/* <DropDownPicker
-                    listMode='SCROLLVIEW'
-                    open={yearOpen}
-                    value={selectedYear}
-                    items={years}
-                    setOpen={setYearOpen}
-                    setValue={setSelectedYear}
-                    placeholder="Year"
-                    style={styles.agedropdown}
-                    dropDownContainerStyle={styles.dropdownContainer}
-                    /> */}
-                {/* </View> */}
-            {/* </View> */}
-
-            {/* Age Section */}
-                <Text style={styles.agelabel}>Age</Text>
-
-            <TouchableOpacity onPress={showDatePicker}>
-                <TextInput
-                style={styles.textInput}
-                value={selectedDate} 
-                editable={false} 
-                pointerEvents="none"
-                />
-            </TouchableOpacity>
-
-            <DateTimePickerModal
-                isVisible={isDatePickerVisible}
-                mode="date"
-                onConfirm={handleConfirm}
-                onCancel={hideDatePicker}
-            />
-
-
-            {/* Gender Section */}
-            <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Gender</Text>
-                    <View style={styles.genderContainer}>
-                        {/* Male */}
-                        <TouchableOpacity
-                            style={[styles.radioButton, gender === 'Male' && styles.radioSelected]}
-                            onPress={() => setGender('Male')}
-                        >
-                            <View style={styles.radioCircle}>
-                                {gender === 'Male' && <View style={styles.radioInnerCircle} />}
-                            </View>
-                            <Text style={styles.radioText}>Male</Text>
-                        </TouchableOpacity>
-
-                        {/* Female */}
-                        <TouchableOpacity
-                            style={[styles.radioButton, gender === 'Female' && styles.radioSelected]}
-                            onPress={() => setGender('Female')}
-                        >
-                            <View style={styles.radioCircle}>
-                                {gender === 'Female' && <View style={styles.radioInnerCircle} />}
-                            </View>
-                            <Text style={styles.radioText}>Female</Text>
-                        </TouchableOpacity>
-
-                        {/* Others */}
-                        <TouchableOpacity
-                            style={[styles.radioButton, gender === 'Others' && styles.radioSelected]}
-                            onPress={() => setGender('Others')}
-                        >
-                            <View style={styles.radioCircle}>
-                                {gender === 'Others' && <View style={styles.radioInnerCircle} />}
-                            </View>
-                            <Text style={styles.radioText}>Others</Text>
-                        </TouchableOpacity>
-                        
-                    </View>
-                </View>
-                {/* Conditionally Render Input Field */}
-                {gender === 'Others' && (
-                    <View>
-                    <FloatingLabelInput
-                        label="Specify"
-                        value={text}
-                        keyboardType="default"
-                        maxLength={50}
-                        style={styles.inputStyles}
-                        containerStyles={styles.containerStyles}
-                        labelStyles={styles.labelStyles}
-                        onChangeText={(value) => setText(value)}
-                    />
-                    </View>
-                )}
-
-                {/* Mobile Number Field */}
-                <FloatingLabelInput
-                    label="Mobile Number"
-                    value={mobileNumber}
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    style={styles.inputStyles}
-                    containerStyles={styles.containerStyles}
-                    labelStyles={styles.labelStyles}
-                    onChangeText={value => setMobileNumber(value)}
-                />
-
-                {/* Address Number Field */}
-                <FloatingLabelInput
-                    label="Address"
-                    value={address}
-                    multiline={true} // Enable multiline
-                    numberOfLines={4} // Adjust height
-                    style={[styles.inputStyles, { height: 100 }]} // Add height to the input
-                    containerStyles={styles.containerStyles}
-                    labelStyles={styles.labelStyles}
-                    onChangeText={value => setAddress(value)}
-                />
-               
-
-                <View>
-                    <View style={styles.countryContainer}>
-                    {!!selected && (
-                        <Text>
-                        {/* Selected: label = {selected.label}, value = {selected.value} */}
-                        </Text>
-                    )}
-                    <Dropdown
-                        style={styles.dropdown}
-                        containerStyle={{
-                            maxHeight: Dimensions.get('window').height * 0.4, // Limit dropdown height to 40% of screen height
-                          }}
-                        data={data}
-                        labelField="label"
-                        valueField="value"
-                        placeholder="Select Country"
-                        value={selected?.value}
-                        onChange={(item) => setSelected(item)}
-                    />
-                    </View>
-                </View> 
-            </View>
-            
-                {/* Submit Button */}
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.cancelButton}>
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                        <Text style={styles.submitButtonText}>Submit</Text>
-                    </TouchableOpacity>
-                </View>
-
-        </ScrollView>
-                  <TouchableOpacity style={styles.closeButton} onPress={closeJoinWithUs}>
-                    <Text style={styles.closeButtonText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              </KeyboardAvoidingView>
-            </Modal>
-            
+           
         </View>
+        {/* Custom Bottom Sheet */}
+          <CustomBottomsheetModel
+            bottomSheetRef={secondSheetRef}
+            snapPoints={['90%']}
+            initialIndex={0}
+            showHandleIndicator={true}
+          >
+        <ScrollView>
+            <View>
+              <View style={{padding:15}}>
+              
+                          <View>
+                              {/* <Text style={styles.formHeader}>
+                                  Please fill the below form to join the Guardian Angels Program
+                              </Text> */}
+                              <Text style={styles.formHeader}>Jion With Us </Text>
+                          </View>
+              
+                          {/* Name Field */}
+                          <FloatingLabelInput
+                              label="Name*"
+                              value={name}
+                              style={styles.inputStyles}
+                              containerStyles={styles.containerStyles}
+                              labelStyles={styles.labelStyles}
+                              onChangeText={value => setName(value)}
+                          />
+                          {/* Email Field */}
+                          <FloatingLabelInput
+                              label="Email*"
+                              value={email}
+                              keyboardType="email-address"
+                              style={styles.inputStyles}
+                              containerStyles={styles.containerStyles}
+                              labelStyles={styles.labelStyles}
+                              onChangeText={(value) => setEmail(value)}
+                          />
+                          
+              
+                          {/* PAN Field */}
+                          {/* <FloatingLabelInput
+                              label="PAN"
+                              value={pan}
+                              style={styles.inputStyles}
+                              containerStyles={styles.containerStyles}
+                              labelStyles={styles.labelStyles}
+                              onChangeText={value => setPan(value)}
+                          /> */}
+                          {/* Age Section */}
+                          {/* <View style={styles.ageContainer}> */}
+                              {/* <Text style={styles.agelabel}>Age</Text> */}
+                              {/* <View style={styles.row}> */}
+                                  {/* Day Dropdown */}
+                                  {/* <DropDownPicker
+                                  listMode='SCROLLVIEW'
+                                  open={dayOpen}
+                                  value={selectedDay}
+                                  items={days}
+                                  setOpen={setDayOpen}
+                                  setValue={setSelectedDay}
+                                  placeholder="Day"
+                                  style={styles.agedropdown}
+                                  dropDownContainerStyle={styles.dropdownContainer}
+                                  /> */}
+              
+                                  {/* Month Dropdown */}
+                                  {/* <DropDownPicker
+                                  listMode='SCROLLVIEW'
+                                  open={monthOpen}
+                                  value={selectedMonth}
+                                  items={months}
+                                  setOpen={setMonthOpen}
+                                  setValue={setSelectedMonth}
+                                  placeholder="Month"
+                                  style={styles.agedropdown}
+                                  dropDownContainerStyle={styles.dropdownContainer}
+                                  /> */}
+              
+                                  {/* Year Dropdown */}
+                                  {/* <DropDownPicker
+                                  listMode='SCROLLVIEW'
+                                  open={yearOpen}
+                                  value={selectedYear}
+                                  items={years}
+                                  setOpen={setYearOpen}
+                                  setValue={setSelectedYear}
+                                  placeholder="Year"
+                                  style={styles.agedropdown}
+                                  dropDownContainerStyle={styles.dropdownContainer}
+                                  /> */}
+                              {/* </View> */}
+                          {/* </View> */}
+              
+                          {/* Age Section */}
+                              {/* <Text style={styles.agelabel}>Age</Text>
+              
+                          <TouchableOpacity onPress={showDatePicker}>
+                              <TextInput
+                              style={styles.textInput}
+                              value={selectedDate} 
+                              editable={false} 
+                              pointerEvents="none"
+                              />
+                          </TouchableOpacity>
+              
+                          <DateTimePickerModal
+                              isVisible={isDatePickerVisible}
+                              mode="date"
+                              onConfirm={handleConfirm}
+                              onCancel={hideDatePicker}
+                          /> */}
+              
+              
+                          {/* Gender Section */}
+                          {/* <View style={styles.section}>
+                                  <Text style={styles.sectionLabel}>Gender</Text>
+                                  <View style={styles.genderContainer}>
+                                      <TouchableOpacity
+                                          style={[styles.radioButton, gender === 'Male' && styles.radioSelected]}
+                                          onPress={() => setGender('Male')}
+                                      >
+                                          <View style={styles.radioCircle}>
+                                              {gender === 'Male' && <View style={styles.radioInnerCircle} />}
+                                          </View>
+                                          <Text style={styles.radioText}>Male</Text>
+                                      </TouchableOpacity>
+              
+                                      <TouchableOpacity
+                                          style={[styles.radioButton, gender === 'Female' && styles.radioSelected]}
+                                          onPress={() => setGender('Female')}
+                                      >
+                                          <View style={styles.radioCircle}>
+                                              {gender === 'Female' && <View style={styles.radioInnerCircle} />}
+                                          </View>
+                                          <Text style={styles.radioText}>Female</Text>
+                                      </TouchableOpacity>
+              
+                                    
+                                      <TouchableOpacity
+                                          style={[styles.radioButton, gender === 'Others' && styles.radioSelected]}
+                                          onPress={() => setGender('Others')}
+                                      >
+                                          <View style={styles.radioCircle}>
+                                              {gender === 'Others' && <View style={styles.radioInnerCircle} />}
+                                          </View>
+                                          <Text style={styles.radioText}>Others</Text>
+                                      </TouchableOpacity>
+                                      
+                                  </View>
+                              </View> */}
+                              
+              
+                              {/* Mobile Number Field */}
+                              {/* <FloatingLabelInput
+                                  label="Mobile Number"
+                                  value={mobileNumber}
+                                  keyboardType="phone-pad"
+                                  maxLength={10}
+                                  style={styles.inputStyles}
+                                  containerStyles={styles.containerStyles}
+                                  labelStyles={styles.labelStyles}
+                                  onChangeText={value => setMobileNumber(value)}
+                              /> */}
+              
+                              <View style={styles.numContainer}>
+                                  <PhoneInput
+                                      defaultValue={phone}
+                                      defaultCode="IN" 
+                                      layout="first" 
+                                      onChangeText={(text) => setMobileNumber(text)} 
+                                      onChangeFormattedText={(text) => setFormattedNumber(text)} 
+                                      onChangeCountry={(country) => setCountryCode(country.callingCode[0])} 
+                                      placeholder="Enter your phone number*"
+                                      containerStyle={[styles.inputContainer, styles.noShadow]}
+                                      textContainerStyle={styles.textContainer}
+                                      textInputStyle={styles.textInputNum}
+                                      flagButtonStyle={styles.flagButton}
+                                      textInputProps={{
+                                        placeholderTextColor: '#AFAFAF',
+                                      }}
+                                      withDarkTheme={false} 
+                                      withShadow={false} 
+                                  />
+                              </View>
+              
+              
+                              {/* Address Number Field */}
+                              <FloatingLabelInput
+                                  label="Address"
+                                  value={address}
+                                  multiline={true} // Enable multiline
+                                  numberOfLines={4} // Adjust height
+                                  style={[styles.inputStyles, { height: 100 }]} // Add height to the input
+                                  containerStyles={styles.containerStyles}
+                                  labelStyles={styles.labelStyles}
+                                  onChangeText={value => setAddress(value)}
+                              />
+                              {/* City Field */}
+                              <FloatingLabelInput
+                                  label="City"
+                                  value={city}
+                                  style={styles.inputStyles}
+                                  containerStyles={styles.containerStyles}
+                                  labelStyles={styles.labelStyles}
+                                  onChangeText={value => setCity(value)}
+                              />
+              
+                              {/* State Field */}
+                              <FloatingLabelInput
+                                  label="State"
+                                  value={state}
+                                  style={styles.inputStyles}
+                                  containerStyles={styles.containerStyles}
+                                  labelStyles={styles.labelStyles}
+                                  onChangeText={value => setState(value)}
+                              />
+                             
+              
+                              <View>
+                                  <View style={styles.countryContainer}>
+                                  {!!selected && (
+                                      <Text>
+                                      {/* Selected: label = {selected.label}, value = {selected.value} */}
+                                      </Text>
+                                  )}
+                                  <Dropdown
+                                      style={styles.dropdown}
+                                      containerStyle={{
+                                          maxHeight: Dimensions.get('window').height * 0.4, // Limit dropdown height to 40% of screen height
+                                        }}
+                                      data={data}
+                                      labelField="label"
+                                      valueField="value"
+                                      placeholder="Select Country"
+                                      value={selected?.value}
+                                      onChange={(item) => setSelected(item)}
+                                  />
+                                  </View>
+                              </View> 
+
+                              {/* postal Code */}
+                              <FloatingLabelInput
+                              label="Postal Code"
+                              value={postalcode}
+                              // keyboardType="postal-code"
+                              style={styles.inputStyles}
+                              containerStyles={styles.containerStyles}
+                              labelStyles={styles.labelStyles}
+                              onChangeText={value => setPostalcode(value)}
+                          />
+                          </View>
+                          
+                              
+           </View>
+           </ScrollView>
+           {/* Submit Button */}
+           <View style={styles.buttonContainer}>
+                                  <TouchableOpacity style={styles.cancelButton}  onPress={handleCancel}>
+                                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                                      <Text style={styles.submitButtonText}>Submit</Text>
+                                  </TouchableOpacity>
+                              </View>
+          </CustomBottomsheetModel>
       </View>
+      {/* </KeyboardAvoidingView> */}
+
+      </BottomSheetModalProvider>
   );
 }
 
@@ -518,52 +657,16 @@ const styles = StyleSheet.create({
     fontFamily:'PP_SemiBold',
     letterSpacing:1,
   },
-  // model 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  scholarsContent:{
-    width:'100%',
-    height:'100%',
-    alignItems:'center',
-    justifyContent:'flex-end',
-    paddingBottom:30,
-    },
-    scholarsname:{
-      color:'#fff',
-      fontSize:24,
-      fontFamily:'PN_BoldItalic',
-      justifyContent:'center',
-      textAlign:'center',
-      alignItems:'center',
-      // marginTop:70,
-    },
-  modalText: {
-    fontSize: 18,
-    marginBottom: 20,
-  },
-  closeButton: {
-    backgroundColor: '#FF5733',
-    padding: 10,
-    borderRadius: 10,
-  },
-  closeButtonText: {
-    color: '#fff',
+  // jion css
+  formHeader: {
     fontSize: 16,
-  },
-
-  // 
-  containerStyles: {
+    fontFamily:'PP_SemiBold',
+    marginBottom: 20,
+    color: '#525252',
+    lineHeight:25,
+    letterSpacing:0.7,
+},
+containerStyles: {
     borderWidth: 1,
     paddingHorizontal: 10,
     backgroundColor: '#fff',
@@ -571,42 +674,53 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     height: 47,
     marginBottom: 20,
-  },
-  labelStyles: {
+},
+labelStyles: {
     backgroundColor: '#fff',
     paddingHorizontal: 5,
     fontSize: 17,
     color:'#00000',
-  },
-
-  inputStyles: {
+},
+inputStyles: {
     color: '#000000',
     borderRadius: 5,
     textDecorationLine:'none',
 },
+// submitButton: {
+//     backgroundColor: '#4CAF50',
+//     paddingVertical: 12,
+//     borderRadius: 5,
+//     alignItems: 'center',
+//     marginTop: 20,
+// },
+// submitButtonText: {
+//     color: '#fff',
+//     fontSize: 16,
+//     fontWeight: 'bold',
+// },
 textInput: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 5,
-  padding: 10,
-  fontSize: 16,
-  // width: 250,
-  backgroundColor: "#fff",
-},
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+    // width: 250,
+    backgroundColor: "#fff",
+  },
 
 section: {
-  marginBottom: 20,
-  marginTop:17,
+    marginBottom: 20,
+    marginTop:17,
 },
 sectionLabel: {
-  fontSize: 16,
-  fontWeight: 'bold',
-  marginBottom: 10,
-  color: '#333',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
 },
 ageContainer: {
-  // flexDirection: 'row',
-  // justifyContent: 'space-between',
+    // flexDirection: 'row',
+    // justifyContent: 'space-between',
 },
 // picker: {
 //     flex: 1,
@@ -617,140 +731,201 @@ ageContainer: {
 //     backgroundColor: '#f9f9f9',
 // },
 genderContainer: {
-  flexDirection: 'row',
-  justifyContent: 'space-around',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
 },
 radioButton: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginRight: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 20,
 },
 radioCircle: {
-  height: 20,
-  width: 20,
-  borderRadius: 10,
-  borderWidth: 2,
-  borderColor: '#85B336',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginRight: 10,
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#85B336',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
 },
 radioInnerCircle: {
-  height: 10,
-  width: 10,
-  borderRadius: 5,
-  backgroundColor: '#85B336',
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: '#85B336',
 },
 radioText: {
-  color: '#333',
+    color: '#333',
 },
 radioSelected: {
-  borderColor: '#85B336',
+    borderColor: '#85B336',
 },
 buttonContainer:{
-  paddingVertical:20,
-  marginBottom:30,
-  flexDirection:'row',
-  justifyContent:'space-evenly',
-  borderTopWidth:1,
-  borderColor: '#6666',
+    paddingVertical:20,
+    // marginBottom:30,
+    flexDirection:'row',
+    justifyContent:'space-evenly',
+    borderTopWidth:1,
+    borderColor: '#6666',
 },
 cancelButton:{
-  borderWidth:1,
-  borderColor:'#85B336',
-  paddingVertical: 12,
-  borderRadius: 5,
-  alignItems: 'center',
-  width:155,
-  backgroundColor: '#fff', 
+    borderWidth:1,
+    borderColor:'#85B336',
+    paddingVertical: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+    width:155,
+    backgroundColor: '#fff', 
 },
 cancelButtonText: {
-  color: '#85B336',
-  fontSize: 16,
-  fontWeight: 'bold',
+    color: '#85B336',
+    fontSize: 16,
+    fontWeight: 'bold',
 },
 
 submitButton: {
-  backgroundColor: '#85B336',
-  paddingVertical: 12,
-  borderRadius: 5,
-  alignItems: 'center',
-  width:155,
+    backgroundColor: '#85B336',
+    paddingVertical: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+    width:155,
 },
 submitButtonText: {
-  color: '#fff',
-  fontSize: 16,
-  fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
 },
-label: {
-  fontSize: 16,
-  fontWeight: 'bold',
-  marginBottom: 10,
-  color: '#333',
-},
-pickerWrapper: {
-  backgroundColor: '#f9f9f9',
-  borderRadius: 8,
-  borderWidth: 1,
-  borderColor: '#ccc',
-},
-picker: {
-  height: 50,
-  color: '#6E6E6E',
-},
-countryContainer: {
-  flex: 1,
-  justifyContent: 'center',
-  marginBottom:20,
-},
-dropdown: {
-  height: 50,
-  borderColor: '#ccc',
-  borderWidth: 1,
-  borderRadius: 8,
-  paddingHorizontal: 10,
-  // backgroundColor: '#f9f9f9',
-},
-selectedText: {
-  marginBottom: 10,
-  fontSize: 16,
-  color: '#333',
-},
-infoText: {
-  // marginTop: 20,
-  fontSize: 14,
-  color: '#555',
-},
+// countryContainer: {
+//     marginVertical: 10,
+//   },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  pickerWrapper: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  picker: {
+    height: 50,
+    color: '#6E6E6E',
+  },
+  countryContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    marginBottom:20,
+  },
+  dropdown: {
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    // backgroundColor: '#f9f9f9',
+  },
+  selectedText: {
+    marginBottom: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  infoText: {
+    // marginTop: 20,
+    fontSize: 14,
+    color: '#555',
+  },
 //   
 // container: {
 //     width:100,
 //   },
-agelabel: {
-  fontSize: 16,
-  fontWeight: 'bold',
-  marginBottom: 10,
-},
-row: {
-  // marginRight:32,
-  width:'30%',
-  flexDirection: 'row',
-  gap:20,
-  // justifyContent: 'space-between',
-},
-agedropdown: {
-  flex: 1,
-  // marginHorizontal: 5,
-  // backgroundColor: '#f9f9f9',
-  borderColor: '#ccc',
-  borderRadius: 8,
-  marginRight:10,
-  // width:'100%',
-},
-dropdownContainer: {
-  // backgroundColor: '#f9f9f9',
-  // marginRight:10,
-  borderWidth:1,
-  borderColor:'#E0E0E0',
-  zIndex:99,
-},
+  agelabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  row: {
+    // marginRight:32,
+    width:'30%',
+    flexDirection: 'row',
+    gap:20,
+    // justifyContent: 'space-between',
+  },
+  agedropdown: {
+    flex: 1,
+    // marginHorizontal: 5,
+    // backgroundColor: '#f9f9f9',
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginRight:10,
+    // width:'100%',
+  },
+  dropdownContainer: {
+    // backgroundColor: '#f9f9f9',
+    // marginRight:10,
+    borderWidth:1,
+    borderColor:'#E0E0E0',
+    zIndex:99,
+  },
+
+  numContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    marginBottom:15,
+    // paddingHorizontal: 20,
+    // backgroundColor: '#f5f5f5',
+  },
+  inputContainer: {
+    width: '100%',
+    height: 50,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#AFAFAF',
+    backgroundColor: '#fff',
+    padding: 0,
+  },
+  textContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    height: 45, 
+    paddingVertical: 0,
+  },
+  textInputNum: {
+    fontSize: 15,
+    color: '#333',
+    paddingVertical: 0,
+    height: 45,
+    // borderWidth: 1,
+  },
+  flagButton: {
+    marginRight: 0,
+    // borderWidth: 1,
+  },
+  noShadow: {
+    shadowColor: 'transparent', 
+    elevation: 0, 
+  },
+  flashMessage: {
+    position: 'absolute',
+    top: 50, // Position below the header
+    left: 20,
+    right: 20,
+    zIndex: 1000,
+    padding: 15,
+    borderRadius: 10,
+  },
+  success: {
+    backgroundColor: 'green',
+  },
+  error: {
+    backgroundColor: 'red',
+  },
+  flashText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
 });

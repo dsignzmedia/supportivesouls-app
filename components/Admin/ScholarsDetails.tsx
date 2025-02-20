@@ -60,7 +60,7 @@ const ScholarsDetails = () => {
           <TouchableOpacity style={styles.iconfav}>
             <Link href={'/Scholars'}>
               <Image
-                style={{ width: 20, height: 20 }}
+                style={{ width: 25, height: 25 }}
                 source={require('../../assets/images/dashboard/properties-backarrow.png')}
               />
             </Link>
@@ -176,18 +176,17 @@ const ScholarsDetails = () => {
           />
 
 
-         <View >
-         <View>
-            <Text style={styles.impactText}>To contribute more for this student</Text>
-          </View>
-
-          <TouchableOpacity style={styles.donateButton}>
-            <Text style={styles.donateButtonText}>Donate Now</Text>
-          </TouchableOpacity>
-         </View>
-          
         </View>
       </ScrollView>
+         <View>
+          <View>
+              <Text style={styles.impactText}>To contribute more for this student</Text>
+            </View>
+
+            <TouchableOpacity style={styles.donateButton}>
+              <Text style={styles.donateButtonText}>Donate Now</Text>
+            </TouchableOpacity>
+          </View>
     </View>
   );
 };
@@ -254,9 +253,9 @@ userContent:{
       },
       iconfav: {
         backgroundColor: 'rgba(233, 233, 233, 0.7)',
-        borderRadius: 15,
-        width: 30,
-        height: 30,
+        borderRadius: 25,
+        width: 40,
+        height: 40,
         alignItems: 'center',
         justifyContent: 'center',
       },

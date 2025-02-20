@@ -1,59 +1,96 @@
-import { View, Text,StyleSheet,ScrollView,Pressable,Image,TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { Link } from "expo-router";
 import { getGalary } from '@/app/services/service';
 
-const photosgalary = () => {
-
-  // const [AllGalary, setAllGalary] = useState();
-      
+const PhotosGalary = () => {
+  const [AllGalary, setAllGalary] = useState([]);
   
-  //     useEffect(() => {
-  //         const getGalarys = async () => {
-  //             const res = await getGalary();
-  //             setAllGalary(res.result);
-  //             // console.warn('getGalarys => ', res.result.length)
-  //         };
-  //         getGalarys();
-  //     }, []);
-
+  useEffect(() => {
+    const getGalarys = async () => {
+      try {
+        const res = await getGalary(); // Fetch gallery data from API
+        if (res.success && res.result) {
+          setAllGalary(res.result);
+        } else {
+          console.warn("No images found.");
+        }
+      } catch (error) {
+        console.error("Failed to fetch gallery images:", error);
+      }
+    };
+    getGalarys();
+  }, []);
 
   return (
     <View style={styles.container}>
       <HeadersImage>
-                <View style={styles.headerContainer}>
-                    {/* Back Arrow */}
-                    <Pressable style={styles.iconfav}>
-                        <Link href={'/More'}>
-                        <Image
-                            style={{ width: 20, height: 20 }}
-                            source={require('../assets/images/dashboard/properties-backarrow.png')}
-                        />
-                        </Link>
-                    </Pressable>
+        <View style={styles.headerContainer}>
+          {/* Back Arrow */}
+          <Pressable style={styles.iconfav}>
+            <Link href={'/More'}>
+              <Image
+                style={{ width: 25, height: 25 }}
+                source={require('../assets/images/dashboard/properties-backarrow.png')}
+              />
+            </Link>
+          </Pressable>
 
-                    {/* Text */}
-                    <Text style={styles.username}>Photos Galary</Text>
-                </View>
-            </HeadersImage>
-            <View>
-                <Text style={{fontSize:15,textAlign:'center',marginTop:50,}}>Coming Soon...!</Text>
-          {/* {AllGalary.length > 0 ? (
-          AllGalary.map((image, index) => (*/}
-            {/* <Image 
-              source={{ uri: '	https://supportivesouls.com/admin/src/assets/galle…-05-2023-1682920298-volunteers_shelfing_books.png' }} // Each image is now a fully constructed URL
-              style={styles.image}
-              resizeMode="cover"
-            /> */}
-          {/* ))
+          {/* Header Title */}
+          <Text style={styles.username}>Photos Gallery</Text>
+        </View>
+      </HeadersImage>
+
+      <View style={{ padding: 15 ,marginBottom: '40%'}}>
+        {/* Check if images are available */}
+        {AllGalary.length > 0 ? (
+          <ScrollView contentContainerStyle={styles.imagesContainer}
+          showsVerticalScrollIndicator={false} 
+          showsHorizontalScrollIndicator={false}
+          >
+            {AllGalary.map((image, index) => (
+              <ImageWithSkeleton
+                key={index}
+                imageUri={`https://supportivesouls.com/admin/src/assets/gallery/${image.image_url}`}
+                imageText={image.image_text}
+              />
+            ))}
+          </ScrollView>
         ) : (
+          // Display a message if no images are available
           <Text style={styles.noImagesText}>No images to display.</Text>
-        )} */}
-            </View>
+        )}
+      </View>
     </View>
-  )
-}
+  );
+};
+
+const ImageWithSkeleton = ({ imageUri, imageText }) => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  return (
+    <View style={styles.imageContainer}>
+      {/* Skeleton Loader */}
+      {isLoading && (
+        <View style={styles.skeleton}>
+          <ActivityIndicator size="large" color="#cccccc" />
+        </View>
+      )}
+
+      {/* Render the image */}
+      <Image
+        source={{ uri: imageUri }}
+        style={styles.image}
+        resizeMode="cover"
+        onLoad={() => setIsLoading(false)} // Hide skeleton when the image loads
+      />
+      
+      {/* Render image description */}
+      <Text style={styles.imageText}>{imageText}</Text>
+    </View>
+  );
+};
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -70,9 +107,9 @@ const styles = StyleSheet.create({
       },
       iconfav: {
         backgroundColor: 'rgba(233, 233, 233, 0.7)',
-        borderRadius: 15,
-        width: 30,
-        height: 30,
+        borderRadius: 25,
+        width: 40,
+        height: 40,
         alignItems: 'center',
         justifyContent: 'center',
       },
@@ -89,10 +126,47 @@ const styles = StyleSheet.create({
            width:50,
            height:50,
         },
-        image:{
-           width:100,
-           height:100,
+        
+        imagesContainer: {
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          justifyContent: 'space-between',
+          marginTop: 20,
+        },
+        imageContainer: {
+          width: '48%',
+          marginBottom: 16,
+          borderRadius: 8,
+          overflow: 'hidden',
+        },
+        skeleton: {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#e0e0e0', // Light gray for skeleton
+          zIndex: 1,
+        },
+        image: {
+          width: '100%',
+          height: 200,
+          borderRadius: 8,
+        },
+        imageText: {
+          textAlign: 'center',
+          marginTop: 8,
+          fontSize: 12,
+          color: '#555',
+        },
+        noImagesText: {
+          textAlign: 'center',
+          fontSize: 16,
+          marginTop: 50,
+          color: '#888',
         },
 
     });
-export default photosgalary
+export default PhotosGalary;

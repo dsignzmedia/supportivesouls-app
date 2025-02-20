@@ -2,10 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 const BASE_URL = 'http://localhost:8000';
-const PRODUCTION_URL = 'https://supportivesouls.com' ;
-// const API_URL = 'http://192.168.29.5:80/supportiveSouls-web/admin/api'; 
+// const PRODUCTION_URL = 'https://supportivesouls.com' ;
+const API_URL = 'http://192.168.29.5:80/supportiveSouls-web/admin/api'; 
 // export const API_URL = 'http://127.0.0.1:80/supportiveSouls-web/admin/api';
-const API_URL = `${PRODUCTION_URL}/admin/api`;
+// const API_URL = `${PRODUCTION_URL}/admin/api`;
 
 export const AssetsUrl ='https://supportivesouls.com/admin/src/assets/gallery';
 
@@ -168,7 +168,52 @@ export const yourDonation = async (userId:any) => {
       throw error;
     }
   }
+  export const logout = async () => {
+    try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) throw new Error('No token found.');
 
+        const response = await axios.post(`${API_URL}/logout`, {}, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.data.success) {
+            await AsyncStorage.removeItem('authToken');
+            return response.data; // Ensure a clean success response
+        } else {
+            throw new Error(response.data.message || 'Logout failed.');
+        }
+    } catch (error) {
+        console.error('Logout error:', error.message || error);
+        throw error; // Re-throw the error for the calling function
+    }
+};
   
-// other function
+
+// export const JionWithUsForm = async () => {
+//   try {
+//     const response = await apiClient.get(`${API_URL}/jionwithus`);
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error fetching user:', error);
+//     throw error;
+//   }
+// }
+
+export const JionWithUsForm = async (formData) => {
+  try {
+    const response = await apiClient.post(`/joinWithUsForm`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    }); // Fixed case-sensitive URL
+    return response.data; 
+  } catch (error) {
+    console.error('Error submitting form:', error.response || error.message);
+    throw error;
+  }
+};
+
   

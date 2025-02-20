@@ -95,7 +95,7 @@ useEffect(() => {
           </View>
 
           {/* Utilization Button */}
-          <TouchableOpacity style={styles.utilizationButton} >
+          <TouchableOpacity style={styles.utilizationButton}>
             <Text style={styles.utilizationButtonText}>Check your donations utilization</Text>
           </TouchableOpacity>
         </View>
@@ -104,8 +104,8 @@ useEffect(() => {
         <View>
           <Text style={styles.impactText}>To make an Social Impact</Text>
 
-          {/* Donate More Button */}
-          <TouchableOpacity style={styles.donateButton} onPress={openTheLogin}>
+          {/* Donate More Button onPress={openTheLogin}*/}
+          <TouchableOpacity style={styles.donateButton}>
             <Text style={styles.donateButtonText}>Donate More</Text>
           </TouchableOpacity>
         </View>
@@ -190,12 +190,12 @@ const styles = StyleSheet.create({
     // flex: 1,
   },
   amountText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily:'PP_SemiBold',
     color: '#000000',
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily:'PP_SemiBold',
     color: '#333',
   },

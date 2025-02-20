@@ -1,10 +1,12 @@
 import { View, Text, StyleSheet, TouchableOpacity,ScrollView,Modal,Image ,Platform} from 'react-native';
-import React, { useState, useEffect } from 'react';
+import React , { useRef, useState,useCallback,useEffect }from "react";
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { router } from 'expo-router';
 import DateTimePicker from "@react-native-community/datetimepicker";
 // import Modal from "react-native-modal";
 import { getAsyncData, socialImpact } from '../services/service';
+import CustomBottomsheetModel from "@/components/common/CustomBottomsheetModel";
+import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 const SocialImpact = () => {
 
@@ -13,6 +15,30 @@ const [modalVisible, setModalVisible] = useState(false);
 
  const [totallyBenifited, setTotallyBenifited] = useState(0);
   const [scholarsData, setsocialImpact] = useState([]);
+  // const [scholarsData, setScholarsData] = useState([]);
+  // const [selectedImpactId, setSelectedImpactId] = useState(null);
+  const [selectedImpact, setSelectedImpact] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const secondSheetRef = useRef<BottomSheetModal>(null);
+
+  // useEffect(() => {
+  //   const init = async () => {
+  //     const user = await getAsyncData('userDetails'); // Fetch user details from storage
+  //     const data = await socialImpact(user.id); // Fetch social impact data
+  
+  //     if (data.success && data.socialImpact.length) {
+  //       console.log('Fetched Data:', data.socialImpact);
+  //       setsocialImpact(data.socialImpact); // Store fetched data
+  //     } else {
+  //       console.log('No social impact data available.');
+  //     }
+  //   };
+  
+  //   init();
+  // }, []);
+
+  
 
   const init = async () => {
     const user = await getAsyncData('userDetails');
@@ -25,6 +51,8 @@ const [modalVisible, setModalVisible] = useState(false);
        setsocialImpact(socialImpact);
         setTotallyBenifited(socialImpact.length); 
     }
+
+    setLoading(false); 
   };
 
   useEffect(() => {
@@ -42,17 +70,49 @@ const [modalVisible, setModalVisible] = useState(false);
     }).format(date); // Format as "20 Apr 2024"
   };
 
-  
-  // Function to open the modal
-  const openModal = () => {
-    setModalVisible(true);
-  };
+    // const bottomSheetRef = useRef<BottomSheetModal>(null);
 
-  // Function to close the modal
-  const closeModal = () => {
-    setModalVisible(false);
-  };
+    // const handlePresentModalPress = useCallback((impact) => {
+    //   setSelectedImpact(impact);
+    //   secondSheetRef.current?.present();
+    //   console.log("Bottom sheet opened");
+    // }, []);
+    // const handlePresentModalPress = useCallback((impact) => {
+    //   setSelectedImpact(impact); 
+    //   secondSheetRef.current?.present();
+    // }, []);
+
+    const handleOpenDetails = (impact: any) => {
+      setSelectedImpact(impact);
+      secondSheetRef.current?.present();
+    };
+  
+    // const handleDismiss = useCallback(() => {
+    //   secondSheetRef.current?.close();
+    //   console.log("Dismiss button pressed");
+    // }, []);
+ 
+
+  // useEffect(() => {
+  //   const init = async () => {
+  //     const user = await getAsyncData('userDetails');
+  //     const data = await socialImpact(user.id);
+  
+  //     if (data.success && data.socialImpact.length) {
+  //       console.log('Fetched Social Impact Data:', data.socialImpact);
+  //       setsocialImpact(data.socialImpact);
+  //       setTotallyBenifited(data.socialImpact.length);
+  //     }
+  //   };
+  
+  //   init();
+  // }, []);
+
+  
+
   return (
+    <BottomSheetModalProvider>
+
     <View style={styles.container}>
       <HeadersImage>
         <View style={styles.scholarsContent}>
@@ -68,8 +128,22 @@ const [modalVisible, setModalVisible] = useState(false);
                 You have supported <Text style={styles.highlightText}>{totallyBenifited} Scholars</Text>
               </Text>
       
-              {/* Scholars list */}
-              {scholarsData.map((scholar: any, index) => (
+              {/* Skeleton Loader or Scholars List */}
+            {loading ? (
+              // Skeleton Loader
+              Array.from({ length: 5 }).map((_, index) => (
+                <View key={index} style={styles.skeletonCard}>
+                  <View style={styles.skeletonLine} />
+                  <View style={styles.skeletonRow}>
+                    <View style={styles.skeletonBox} />
+                    <View style={styles.skeletonBox} />
+                  </View>
+                  <View style={styles.skeletonButton} />
+                </View>
+              ))
+            ) : scholarsData.length > 0 ? (
+
+              scholarsData.map((scholar: any, index) => (
                 <View key={index} style={styles.card}>
                   {/* Scholar name */}
                   <View style={styles.labelGroup}>
@@ -82,7 +156,7 @@ const [modalVisible, setModalVisible] = useState(false);
                     <View style={styles.labelGroup}>
                       <Text style={styles.amount}>₹ {new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(scholar.donation_amount)}</Text>
                       <Text style={styles.label}>Amount</Text>
-                    </View>
+                    </View> 
                     <View style={styles.labelGroup}>
                       <Text style={styles.date}>{scholar.formatted_date}</Text>
                       <Text style={styles.label}>Date</Text>
@@ -90,36 +164,121 @@ const [modalVisible, setModalVisible] = useState(false);
                   </View>
 
 
-                  {/* More details button onPress={openModal} activeOpacity={0.5}*/}
-                    <TouchableOpacity style={styles.button} >
+                  {/* More details button onPress={openModal} activeOpacity={0.5}  onPress={() => openModal(scholar)} */}
+                    <TouchableOpacity style={styles.button}  activeOpacity={0.5}
+                     onPress={() => handleOpenDetails(scholar)}>
                       <Text style={styles.buttonText}>More Details</Text>
                     </TouchableOpacity>
 
                 </View>
-              ))}
+              ))
+              ) : (
+                <Text style={styles.noDataText}>No records found.</Text>
+              )}
               </View>
             </ScrollView>
-            {/* Modal Component */}
-            <Modal
-              visible={modalVisible}
-              animationType="slide"
-              transparent={true}
-              onRequestClose={closeModal}
+            {/* Custom Bottom sheetModel */}
+            
+            <CustomBottomsheetModel
+              bottomSheetRef={secondSheetRef}
+              snapPoints={['75%', '100%']}
+              initialIndex={0}
+              showHandleIndicator={true}
             >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContainer}>
-                  <Text style={styles.modalTitle}>Scholar Details</Text>
-                  {/* Add more details you want to display here */}
-                  <Text style={styles.modalText}>Here you can display more information about the scholar.</Text>
+              {selectedImpact ? (
+                <View style={styles.bottomSheetContainer}>
+                  {/* Impact Details */}
+                  <Text style={styles.impactHeading}>Impact Details</Text>
+                  {selectedImpact.impact_name || selectedImpact.amount_required || selectedImpact.amount_spent || selectedImpact.details ? (
+                    <View style={{ marginBottom: 16 }}>
+                      {/* <Text style={styles.bottomTextBox}>
+                        Scholar Name: {selectedImpact.impact_name || 'N/A'}
+                      </Text> */}
+                      <View style={styles.labelGroup}>
+                        <Text style={styles.label}>Scholar Name</Text>
+                        <Text style={styles.name}>{selectedImpact.impact_name || 'N/A'}</Text>
+                      </View>
 
-                  {/* Close Button */}
-                  <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-                    <Text style={styles.buttonText}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
+                      <View style={styles.labelGroup}>
+                        <Text style={styles.label}>Amount Required:</Text>
+                        <Text style={styles.name}>₹ {selectedImpact.amount_required
+                  ? new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(selectedImpact.amount_required)
+                  : 'N/A'}</Text>
+                      </View>
+
+                      <View style={styles.labelGroup}>
+                        <Text style={styles.label}>Amount Spent:</Text>
+                        <Text style={styles.name}>₹ {selectedImpact.amount_spent
+                  ? new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(selectedImpact.amount_spent)
+                  : 'N/A'}</Text>
+                      </View>
+
+                      <View style={styles.labelGroup}>
+                        <Text style={styles.label}>Details:</Text>
+                        <Text style={styles.name}>{selectedImpact.details || 'N/A'}</Text>
+                      </View>
+
+
+                      {/* <Text style={styles.bottomTextBox}>
+                        Amount Spent: ₹ {selectedImpact.amount_spent || 'N/A'}
+                      </Text>
+                      <Text style={styles.bottomTextBox}>
+                        Details: {selectedImpact.details || 'N/A'}
+                      </Text> */}
+                    </View>
+                  ) : (
+                    <Text style={styles.noDataText}>No Impact Details available.</Text>
+                  )}
+
+                  {/* Partial Donor Information */}
+                  <View style={{ marginBottom: 16 }}>
+                  <Text style={styles.bottomContent}>
+                      You are a partial donor for this Impact. An amount of Rs. ₹{' '}
+                      {selectedImpact.donation_amount !== undefined
+                        ? new Intl.NumberFormat('en-IN', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }).format(selectedImpact.donation_amount)
+                        : 'N/A'}{' '}
+                      from your donation was utilized in conjunction with funds from other donors.
+                    </Text>
+                  </View>
+
+                  <View style={styles.horizontalLine}></View>
+
+                  {/* Documents Submitted */}
+                  <View>
+                  <Text style={styles.documentsHeading}>Documents Submitted</Text>
+                      {selectedImpact.documents && selectedImpact.documents.length > 0 ? (
+                        selectedImpact.documents.map((document, index) => (
+                          <View key={index} style={styles.documentItemContainer}>
+                          <Text style={styles.documentItem}>{document.document_title}</Text>
+                          <Text style={styles.documentItem}>Uploaded on: {document.document_uploaded || 'N/A'}</Text>
+                          
+                          {/* Check if an image exists for the document */}
+                          {document.image_url && (
+                            <Image 
+                              source={{ uri: document.image_url }} 
+                              style={styles.documentImage} 
+                              resizeMode="cover"
+                            />
+                          )}
+                        </View>
+                        ))
+                      ) : (
+                        <Text style={styles.noDataText}>No documents available.</Text>
+                      )}
+                    </View>
+                  </View>
+                ) : (
+                  <Text style={styles.noDataText}>No details available.</Text>
+                )}
+            </CustomBottomsheetModel>
+
+             
     </View>
+    </BottomSheetModalProvider>
+
   )
 }
 
@@ -244,6 +403,71 @@ const styles = StyleSheet.create({
       padding: 10,
       borderRadius: 5,
     },
+    // 
+    bottomSheetContainer:{
+      padding: 16,
+    },
+    impactHeading:{
+      fontSize: 18,
+      fontFamily:'RB_Bold',
+      marginBottom: 16,
+    },
+    bottomTextBox:{
+      fontSize: 16,
+      fontFamily:'RB_Regular',
+      color:'#000000',
+      marginBottom: 10,
+    },  
+    bottomContent:{
+      fontSize: 16,
+      fontFamily:'PP_Regular',
+      color:'#000000',
+    },
+    horizontalLine:{
+      borderBottomWidth: 1,
+      borderBottomColor: '#E0E0E0',
+      marginBottom: 16,
+      justifyContent:'center',
+      alignSelf:'center',
+      width: '80%',
+      borderRadius: 10,
+    },
+    documentsHeading:{
+      fontSize: 18,
+      fontFamily:'RB_Bold',
+      marginBottom: 16,
+    },
+    documentItemContainer: {
+      backgroundColor: '#f9f9f9', // Light background
+      padding: 12,
+      marginBottom: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#ddd', // Light border
+    },
+    documentItem: {
+      fontSize: 16,
+      color: '#555', // Medium-dark text
+      marginBottom: 4,
+    },
+    
+    noDataText:{
+      fontSize: 16,
+      fontFamily:'RB_Regular',
+      color:'#666',
+      textAlign:'center',
+      marginTop: 16,
+    },
+    skeletonCard: { backgroundColor: '#e0e0e0', marginBottom: 16, padding: 16, borderRadius: 8 },
+    skeletonLine: { height: 20, backgroundColor: '#ccc', marginBottom: 8, borderRadius: 4 },
+    skeletonRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+    skeletonBox: { width: '45%', height: 20, backgroundColor: '#ccc', borderRadius: 4 },
+    skeletonButton: { height: 40, backgroundColor: '#ddd', borderRadius: 8, marginTop: 8 },
    
+    documentImage: {
+      width: 100,
+      height: 100,
+      marginTop: 10,
+    },
 });
 export default SocialImpact

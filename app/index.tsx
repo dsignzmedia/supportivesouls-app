@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#ffffff", // Background color for splash screen
+    // backgroundColor: "#ffffff", // Background color for splash screen
   },
   splashImage: {
     width:260,
