@@ -1,8 +1,16 @@
-import React, { useState } from "react";
+
+
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View, TouchableOpacity, Image,ScrollView, SafeAreaView, ImageBackground, Platform, Dimensions, TextInput,Alert } from "react-native";
 import { router } from "expo-router";
 import { useNavigation } from '@react-navigation/native';
 import { signin, storeAsyncData } from "./services/service";
+import { FloatingLabelInput } from "react-native-floating-label-input";
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from 'expo-router';
+// import LoadingPage from "./loading";
+import FlashMessage, { showMessage } from "react-native-flash-message";
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,6 +27,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const navigation = useNavigation();
 
   const handleSubmit = () => {
@@ -45,34 +54,76 @@ export default function LoginPage() {
     }
   };
 
-  
- async function openLogin() {
-    const loginData = {email, password};
-    const res = await signin(loginData);
-    console.warn('email => ', email);
-    console.warn('password => ',  password);
-    // console.warn('res => ', res);  
-    // console.warn('email=>',email);
-    // console.warn('password=>',password);
-    // router.push('/(tabs)/Dashboard');
-    
-      if (res?.status === 200 && res.success) {
-        console.log("Login successful:", res.message);
-        // Navigate to dashboard or next screen
+  const handleCancel = () => {
+    navigation.goBack();
+    // console.log(navigation.getState());
+  };
 
+  
+  async function openLogin() {
+    const loginData = { email, password };
+    const res = await signin(loginData);
+
+    if (res?.status === 200 && res.success) {
         await storeAsyncData('userDetails', res.user);
-        router.push('/(tabs)/Dashboard');
-      } else {
-        alert('Login credientals are invalid....')
-        console.warn("Login failed:", res.message);
-        if (res.errors.email) setEmailError(res.errors.email);
-        if (res.errors.password) setPasswordError(res.errors.password);
+
+         // Show success message
+      showMessage({
+        message: "Login Successful",
+        description: "Welcome back!",
+        type: "success",
+        icon: "success",
+        duration: 1000,
+        backgroundColor: "#4CAF50", 
+        color: "#FFFFFF", 
+        textStyle: { fontSize: 16, fontWeight: "bold" },
+        titleStyle: { fontSize: 18 }, 
+      });
         
-  }
-} 
+      // Navigate to Dashboard
+      try {
+        router.replace('/(tabs)/Dashboard');
+        console.log('Navigation successful to Dashboard');
+      } catch (error) {
+        console.error('Failed to navigate to Dashboard:', error);
+      }
+
+        // Navigate to Dashboard
+        // router.replace('/(tabs)/Dashboard');
+    } else {
+        // Show error message
+      showMessage({
+        message: "Invalid credentials. Please try again.",
+        type: "danger",
+        icon: "danger",
+        duration: 1000,
+        backgroundColor: "#cc5050", 
+        color: "#FFFFFF", 
+        textStyle: { fontSize: 16, fontWeight: "bold" }, 
+        titleStyle: { fontSize: 18 },
+      });
+
+        // Set field errors
+        if (res.errors?.email) setEmailError(res.errors.email);
+        if (res.errors?.password) setPasswordError(res.errors.password);
+    }
+}
+
 
   return (
     <View style={styles.container}>
+      
+            {/* {flashMessage.message && (
+              <View
+                style={[
+                  styles.flashMessage,
+                  flashMessage.type === 'success' ? styles.success : styles.error,
+                ]}
+              >
+                <Text style={styles.flashText}>{flashMessage.message}</Text>
+              </View>
+            )} */}
+
       <View style={styles.logoContainer}>
         <Image
           source={require('../assets/images/dashboard/supportive_souls_logo.png')}
@@ -80,6 +131,7 @@ export default function LoginPage() {
           resizeMode="contain"
         />
       </View>
+            <FlashMessage position="center" />
 
       <View style={styles.bottomContainer}>
 
@@ -92,43 +144,74 @@ export default function LoginPage() {
           <Text style={styles.heading}>Sign in your account</Text>
 
           {/* Form Fields */}
-          <View>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
+          {/* <View> */}
+            {/* <Text style={styles.label}>Email</Text> */}
+            {/* <TextInput
               style={styles.input}
               placeholder="selva@dselva.com"
-              placeholderTextColor="#aaa"
+              // placeholderTextColor="#aaa"
               keyboardType="email-address"
               value={email}
               onChangeText={setEmail}
-            />
-            {emailError && <Text style={styles.errorText}>{emailError}</Text>}
+            /> */}
+             {/* Email Field */}
+            <View style={styles.floatingInputContainer}>
+              <FloatingLabelInput
+                label="Email"
+                value={email}
+                keyboardType="email-address"
+                containerStyles={styles.containerStyles}
+                labelStyles={styles.labelStyles}
+                inputStyles={styles.inputStyles}
+                onChangeText={(value) => setEmail(value)}
+              />
+              {emailError ? <Text style={styles.errorText}>{emailError}</Text>: null}
+            </View>
 
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.passwordinput}
-              placeholder="********"
-              placeholderTextColor="#aaa"
-              secureTextEntry
+
+            {/* Password Field */}
+            <View style={styles.floatingInputContainer}>
+            <FloatingLabelInput
+              label="Password"
               value={password}
-              onChangeText={setPassword}
+              isPassword={!isPasswordVisible} // Toggle password visibility
+              customHidePasswordComponent={password !== '' && (
+                <FontAwesome 
+                  name="eye-slash" 
+                  size={20} 
+                  color="#AFAFAF" 
+                  onPress={() => setIsPasswordVisible(false)} // Handle hide password
+                />
+              )}
+              customShowPasswordComponent={password !== '' && (
+                <FontAwesome 
+                  name="eye" 
+                  size={20} 
+                  color="#AFAFAF" 
+                  onPress={() => setIsPasswordVisible(true)} // Handle show password
+                />
+              )}
+              containerStyles={styles.containerStyles}
+              labelStyles={styles.labelStyles}
+              inputStyles={styles.inputStyles}
+              onChangeText={(value) => setPassword(value)}
             />
-            {passwordError && <Text style={styles.errorText}>{passwordError}</Text>}
-
+              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text>: null}
+            </View>
             {/* Forget Password Link */}
-            <TouchableOpacity onPress={() => console.log("Navigate to Forget Password Screen")}>
+            <TouchableOpacity style={styles.forgetContainer}> 
               <Text style={styles.forgotPasswordText}>Forgot Your Password?</Text>
             </TouchableOpacity>
-          </View>
-
+          {/* </View> */}
+ 
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.signInButton} onPress={handleSubmit}>
+            <TouchableOpacity style={styles.signInButton} onPress={handleSubmit} activeOpacity={0.7}>
               <Text style={styles.buttonText}>Sign In</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.cancelButton} onPress={()=>navigation.goBack()}>
+            <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} activeOpacity={0.7}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -178,19 +261,19 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 50,
   },
   bottomContent:{
-    marginTop:40,
+    marginTop:50,
     // marginHorizontal:40,
     // paddingTop:40,
     // paddingHorizontal:40,
     // borderWidth:1,
     alignItems:'center',
-    justifyContent:'center',
+    justifyContent:'center',  
   },
   heading: {
     fontSize: 30,
     color: "#ffffff",
     textAlign: "center",
-    marginBottom: 35,
+    marginBottom: 25,
     fontFamily: "PN_BoldItalic",
     letterSpacing: 1,
   },
@@ -210,7 +293,7 @@ const styles = StyleSheet.create({
     height: 42,
     width:288,
     marginBottom: 20,
-    paddingLeft: 15,
+    // paddingLeft: 15,
     alignItems:'center',
     justifyContent:'center',
     fontSize: 15,
@@ -239,7 +322,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: "red",
     fontSize: 14,
-    marginBottom: 15,
+    marginBottom: 10,
     // textAlign: "center",
   },
   buttonContainer: {
@@ -276,13 +359,66 @@ const styles = StyleSheet.create({
     fontFamily: "PP_SemiBold",
     letterSpacing:1,
   },
+  forgetContainer:{
+    alignItems:'flex-end',
+    justifyContent:'flex-end',
+    width:288,
+  },
   forgotPasswordText: {
     color: "#fff",
     fontSize: 14,
     textAlign: "right",
-    marginRight: 10,
+    justifyContent: "flex-end",
+    // marginRight: 10,
     marginBottom:30,
     textDecorationLine: "none",
     fontFamily: "PP_Regular",
   },
+  // 
+  inputStyles: {
+    color: '#000000',
+    borderRadius: 5,
+    fontSize:16,
+    textDecorationLine:'none',
+
+},
+containerStyles: {
+  borderWidth: 1,
+  paddingHorizontal: 10,
+  backgroundColor: '#fff',
+  borderColor: '#AFAFAF',
+  borderRadius: 5,
+  height: 47,
+  width:28,
+  marginBottom: 20,
+},
+labelStyles: {
+  backgroundColor: '#fff',
+  paddingHorizontal: 5,
+  fontSize: 17,
+  color:'#00000',
+},
+floatingInputContainer: {
+    width: 288, // Constrain the width to 288px
+    // marginBottom: 20,
+  },
+  flashMessage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    padding: 10,
+    alignItems: 'center',
+},
+success: {
+    backgroundColor: 'green',
+},
+error: {
+    backgroundColor: 'red',
+},
+flashText: {
+    color: 'white',
+    fontWeight: 'bold',
+},
 });

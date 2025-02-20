@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet ,Image,Pressable, Dimensions,KeyboardAvoidingView,Platform,Keyboard,TextInput} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet ,Image,Pressable, Dimensions,KeyboardAvoidingView,Platform,Keyboard,TextInput,Alert } from 'react-native';
 import React, { useState } from 'react';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { FloatingLabelInput } from "react-native-floating-label-input";
@@ -10,7 +10,9 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { ScrollView } from 'react-native-gesture-handler';
 import { Link } from "expo-router";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-
+import PhoneInput from 'react-native-phone-number-input';   
+import axios from 'axios';
+import { useRouter } from "expo-router";
 
 const {width,height} = Dimensions.get('window');
 const Jionprogram = ({children}:any) => {
@@ -44,30 +46,51 @@ const Jionprogram = ({children}:any) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [pan, setPan] = useState('');
-    const [mobileNumber, setMobileNumber] = useState('');
+    // const [mobileNumber, setMobileNumber] = useState('');
     const [address, setAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+
     const [birthday, setBirthday] = useState('');
     const [day, setDay] = useState('');
     const [month, setMonth] = useState('');
     const [year, setYear] = useState('');
     const [gender, setGender] = useState('');
 
-    const handleSubmit = () => {
-        // Handle form submission logic here
-        console.log('Form Data:', {
-            name,
-            email,
-            pan,
-            mobileNumber,
-            address,
-            birthday: `${day}/${month}/${year}`,
-            gender,
-        });
-        alert('Form submitted successfully!');
+    const handleSubmit = async () => {
+        if (!name || !email || !phone || !address || !city || !state || !selected) {
+        // if (!name || !email || !phone || !pan || !address || !city || !state || !selected) {
+            alert('Please fill in all required fields.');
+            return;
+          }
+        
+          try {
+            const response = await axios.post('https://your-server-url/submit-form.php', {
+              name,
+              email,
+              phone: formattedNumber, // Ensure the number is in international format
+              // pan,
+              // age: selectedDate,
+              // gender,
+              address,
+              city,
+              state,
+              country: selected.label,
+            });
+        
+            if (response.data.success) {
+              alert('Form submitted successfully!');
+            } else {
+              alert('Form submission failed.');
+            }
+          } catch (error) {
+            console.error(error);
+            alert('An error occurred while submitting the form.');
+          }
     };
 
     // age select funtion
-
+    const router = useRouter();
     const [dayOpen, setDayOpen] = useState(false);
     const [monthOpen, setMonthOpen] = useState(false);
     const [yearOpen, setYearOpen] = useState(false);
@@ -121,6 +144,18 @@ const Jionprogram = ({children}:any) => {
 
     const [text, setText] = useState('');
 
+    const [phone, setMobileNumber] = useState('');
+    const [formattedNumber, setFormattedNumber] = useState('');
+    const [countryCode, setCountryCode] = useState('');
+
+    const handleVerify = () => {
+        if (!formattedNumber) {
+          Alert.alert('Error', 'Please enter a valid phone number.');
+          return;
+        }
+        Alert.alert('Success', `Phone Number: ${formattedNumber}\nCountry Code: +${countryCode}`);
+    };
+
 
   return (
 
@@ -132,7 +167,7 @@ const Jionprogram = ({children}:any) => {
                     <Pressable style={styles.iconfav}>
                         <Link href={'/(tabs)/Dashboard'}>
                         <Image
-                            style={{ width: 20, height: 20 }}
+                            style={{ width: 25, height: 25 }}
                             source={require('../../assets/images/dashboard/properties-backarrow.png')}
                         />
                         </Link>
@@ -147,7 +182,7 @@ const Jionprogram = ({children}:any) => {
       style={{ flex: 1 }}>
 
         <ScrollView>
-            <View style={{padding:15}}>
+            <View style={{padding:15,marginBottom:'15%'}}>
 
             <View>
                 {/* <Text style={styles.formHeader}>
@@ -158,7 +193,7 @@ const Jionprogram = ({children}:any) => {
 
             {/* Name Field */}
             <FloatingLabelInput
-                label="Name"
+                label="Name*"
                 value={name}
                 style={styles.inputStyles}
                 containerStyles={styles.containerStyles}
@@ -167,7 +202,7 @@ const Jionprogram = ({children}:any) => {
             />
             {/* Email Field */}
             <FloatingLabelInput
-                label="Email"
+                label="Email*"
                 value={email}
                 keyboardType="email-address"
                 style={styles.inputStyles}
@@ -178,14 +213,14 @@ const Jionprogram = ({children}:any) => {
             
 
             {/* PAN Field */}
-            <FloatingLabelInput
+            {/* <FloatingLabelInput
                 label="PAN"
                 value={pan}
                 style={styles.inputStyles}
                 containerStyles={styles.containerStyles}
                 labelStyles={styles.labelStyles}
                 onChangeText={value => setPan(value)}
-            />
+            /> */}
             {/* Age Section */}
             {/* <View style={styles.ageContainer}> */}
                 {/* <Text style={styles.agelabel}>Age</Text> */}
@@ -232,9 +267,9 @@ const Jionprogram = ({children}:any) => {
             {/* </View> */}
 
             {/* Age Section */}
-                <Text style={styles.agelabel}>Age</Text>
+                {/* <Text style={styles.agelabel}>Age</Text> */}
 
-            <TouchableOpacity onPress={showDatePicker}>
+            {/* <TouchableOpacity onPress={showDatePicker}>
                 <TextInput
                 style={styles.textInput}
                 value={selectedDate} 
@@ -248,14 +283,14 @@ const Jionprogram = ({children}:any) => {
                 mode="date"
                 onConfirm={handleConfirm}
                 onCancel={hideDatePicker}
-            />
+            /> */}
 
 
             {/* Gender Section */}
-            <View style={styles.section}>
+            {/* <View style={styles.section}>
                     <Text style={styles.sectionLabel}>Gender</Text>
                     <View style={styles.genderContainer}>
-                        {/* Male */}
+                        
                         <TouchableOpacity
                             style={[styles.radioButton, gender === 'Male' && styles.radioSelected]}
                             onPress={() => setGender('Male')}
@@ -266,7 +301,7 @@ const Jionprogram = ({children}:any) => {
                             <Text style={styles.radioText}>Male</Text>
                         </TouchableOpacity>
 
-                        {/* Female */}
+                        
                         <TouchableOpacity
                             style={[styles.radioButton, gender === 'Female' && styles.radioSelected]}
                             onPress={() => setGender('Female')}
@@ -277,7 +312,7 @@ const Jionprogram = ({children}:any) => {
                             <Text style={styles.radioText}>Female</Text>
                         </TouchableOpacity>
 
-                        {/* Others */}
+                        
                         <TouchableOpacity
                             style={[styles.radioButton, gender === 'Others' && styles.radioSelected]}
                             onPress={() => setGender('Others')}
@@ -289,25 +324,11 @@ const Jionprogram = ({children}:any) => {
                         </TouchableOpacity>
                         
                     </View>
-                </View>
-                {/* Conditionally Render Input Field */}
-                {gender === 'Others' && (
-                    <View>
-                    <FloatingLabelInput
-                        label="Specify"
-                        value={text}
-                        keyboardType="default"
-                        maxLength={50}
-                        style={styles.inputStyles}
-                        containerStyles={styles.containerStyles}
-                        labelStyles={styles.labelStyles}
-                        onChangeText={(value) => setText(value)}
-                    />
-                    </View>
-                )}
+                </View> */}
+                
 
                 {/* Mobile Number Field */}
-                <FloatingLabelInput
+                {/* <FloatingLabelInput
                     label="Mobile Number"
                     value={mobileNumber}
                     keyboardType="phone-pad"
@@ -316,7 +337,29 @@ const Jionprogram = ({children}:any) => {
                     containerStyles={styles.containerStyles}
                     labelStyles={styles.labelStyles}
                     onChangeText={value => setMobileNumber(value)}
-                />
+                /> */}
+
+                <View style={styles.numContainer}>
+                    <PhoneInput
+                        defaultValue={phone}
+                        defaultCode="IN" 
+                        layout="first" 
+                        onChangeText={(text) => setMobileNumber(text)} 
+                        onChangeFormattedText={(text) => setFormattedNumber(text)} 
+                        onChangeCountry={(country) => setCountryCode(country.callingCode[0])} 
+                        placeholder="Enter your phone number*"
+                        containerStyle={[styles.inputContainer, styles.noShadow]}
+                        textContainerStyle={styles.textContainer}
+                        textInputStyle={styles.textInputNum}
+                        flagButtonStyle={styles.flagButton}
+                        textInputProps={{
+                            placeholderTextColor: '#AFAFAF',
+                          }}
+                          withDarkTheme={false} 
+                          withShadow={false} 
+                    />
+                </View>
+
 
                 {/* Address Number Field */}
                 <FloatingLabelInput
@@ -328,6 +371,25 @@ const Jionprogram = ({children}:any) => {
                     containerStyles={styles.containerStyles}
                     labelStyles={styles.labelStyles}
                     onChangeText={value => setAddress(value)}
+                />
+                {/* City Field */}
+                <FloatingLabelInput
+                    label="City"
+                    value={city}
+                    style={styles.inputStyles}
+                    containerStyles={styles.containerStyles}
+                    labelStyles={styles.labelStyles}
+                    onChangeText={value => setCity(value)}
+                />
+
+                {/* State Field */}
+                <FloatingLabelInput
+                    label="State"
+                    value={state}
+                    style={styles.inputStyles}
+                    containerStyles={styles.containerStyles}
+                    labelStyles={styles.labelStyles}
+                    onChangeText={value => setState(value)}
                 />
                
 
@@ -354,23 +416,62 @@ const Jionprogram = ({children}:any) => {
                 </View> 
             </View>
             
-                {/* Submit Button */}
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.cancelButton}>
+                
+
+        </ScrollView>
+        {/* Submit Button */}
+        <View style={styles.buttonContainer}>
+                    <TouchableOpacity style={styles.cancelButton} onPress={() => router.replace('/(tabs)/Dashboard')}>
                         <Text style={styles.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
                         <Text style={styles.submitButtonText}>Submit</Text>
                     </TouchableOpacity>
                 </View>
-
-        </ScrollView>
         </KeyboardAvoidingView>
            
         </View>
   )
 }
 const styles = StyleSheet.create({
+    numContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        marginBottom:15,
+        // paddingHorizontal: 20,
+        // backgroundColor: '#f5f5f5',
+      },
+      noShadow: {
+        shadowColor: 'transparent', 
+        elevation: 0, 
+      },
+      inputContainer: {
+        width: '100%',
+        height: 50,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: '#AFAFAF',
+        backgroundColor: '#fff',
+        padding: 0,
+      },
+      textContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        height: 45, 
+        paddingVertical: 0,
+      },
+      textInputNum: {
+        fontSize: 15,
+        color: '#333',
+        paddingVertical: 0, // Adjust padding to fit text within the height
+        height: 45,
+        // borderWidth: 1,
+      },
+      flagButton: {
+        marginRight: 0,
+        // borderWidth: 1,
+      },
+
     container:{
         backgroundColor:'#fff',
         height:'100%',
@@ -417,9 +518,9 @@ const styles = StyleSheet.create({
           },
           iconfav: {
             backgroundColor: 'rgba(233, 233, 233, 0.7)',
-            borderRadius: 15,
-            width: 30,
-            height: 30,
+            borderRadius: 25,
+            width: 40,
+            height: 40,
             alignItems: 'center',
             justifyContent: 'center',
           },
@@ -458,6 +559,7 @@ const styles = StyleSheet.create({
     inputStyles: {
         color: '#000000',
         borderRadius: 5,
+        fontSize:16,
         textDecorationLine:'none',
     },
     // submitButton: {
@@ -537,7 +639,7 @@ const styles = StyleSheet.create({
     },
     buttonContainer:{
         paddingVertical:20,
-        marginBottom:30,
+        // marginBottom:30,
         flexDirection:'row',
         justifyContent:'space-evenly',
         borderTopWidth:1,

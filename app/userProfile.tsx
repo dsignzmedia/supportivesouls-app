@@ -36,7 +36,7 @@ const UserProfile = () => {
                     <Pressable style={styles.iconfav}>
                         <Link href={'/More'}>
                         <Image
-                            style={{ width: 20, height: 20 }}
+                            style={{ width: 25, height: 25 }}
                             source={require('../assets/images/dashboard/properties-backarrow.png')}
                         />
                         </Link>
@@ -124,9 +124,9 @@ const styles = StyleSheet.create({
       },
       iconfav: {
         backgroundColor: 'rgba(233, 233, 233, 0.7)',
-        borderRadius: 15,
-        width: 30,
-        height: 30,
+        borderRadius: 25,
+        width: 40,
+        height: 40,
         alignItems: 'center',
         justifyContent: 'center',
       },

@@ -1,12 +1,17 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Platform,Linking } from 'react-native';
+
+ 
+
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Platform,Linking,Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from "expo-router";
-import { getAsyncData, getUserById } from '../services/service';
+import {useRouter } from "expo-router";
+import { getAsyncData, getUserById, logout } from '../services/service';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Fontisto from '@expo/vector-icons/Fontisto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
 const SectionsData = [
   {
@@ -70,6 +75,8 @@ const handleLinkedInPress = (name:any) => {
   Linking.openURL(url);
 };
 
+
+const router = useRouter();
 // const openProfile = async () => {
 //     const userDetails = await getUserById(17); //NOTE: need to get user id from async storage when user logged in
 //     console.warn('userDetails => ', userDetails)
@@ -82,7 +89,6 @@ const handleLinkedInPress = (name:any) => {
 //     } else {
 //       console.error('Failed to fetch user details!');
 //     }
-    
 // }
 const openProfile = async () => {
   const data = await getAsyncData('userDetails')
@@ -105,6 +111,19 @@ const openProfile = async () => {
   
 };
 
+const handleLogout = async () => {
+    try {
+        const data = await logout();
+        if (data.success) {
+            router.replace('/login');
+        }
+    } catch (error) {
+        console.error('Error logging out:', error);
+        alert('Error logging out. Please try again.');
+    }
+};
+
+
   const openAboutUs = ()=>{
     router.push('/about');
   }
@@ -120,10 +139,10 @@ const openProfile = async () => {
   const openContact = ()=>{
     router.push('/contactus');
   }
-  
+
 const More = () => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-  const [userDetails, setUserDetails] = useState({name: '', email: ''});
+  const [userDetails, setUserDetails] = useState({name: '', email: '',image:''});
   const setDetails = async () => {
     const data:any = await getAsyncData('userDetails');
     setUserDetails(data);
@@ -137,7 +156,23 @@ const More = () => {
   const handleToggle = (index: number) => {
     setExpandedIndex((prev) => (prev === index ? null : index));
   };
-  
+
+//   const logout = async () => {
+//     try {
+//         // Remove the token from AsyncStorage
+//         await AsyncStorage.removeItem('authToken');
+
+//         // Optionally display a confirmation
+//         Alert.alert('Logout', 'You have been logged out successfully!');
+
+//         // Navigate to the login page
+//         // navigation.replace('login'); // Replace ensures no back navigation to this screen
+//     } catch (error) {
+//         console.error('Error during logout:', error);
+//     }
+// };
+
+    
 
   return (
     
@@ -151,12 +186,23 @@ const More = () => {
       <ScrollView>
         <View style={{ padding: 20 }}>
           {/* Profile Section */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-            <Image style={styles.mapMedia} source={require('../../assets/images/dashboard/profileimage.png')} />
+          <View style={{ flexDirection: 'row',justifyContent:'space-between', marginBottom: 20 ,borderWidth:1,borderRadius:50,padding:10,borderColor:'#BDBDBD',alignItems: 'center'}}>
+          
             <View style={{ marginLeft: 15 }}>
-              <Text style={styles.profileName}>{userDetails.name}</Text>
-              <Text style={styles.profileEmail}>{userDetails.email}</Text>
+              <Text style={styles.profileName}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              >{userDetails.name}</Text>
+
+              <Text style={styles.profileEmail}
+              numberOfLines={1}
+              ellipsizeMode="tail">{userDetails.email}</Text>
             </View>
+            <TouchableOpacity onPress={() => handleLogout()} style={{alignItems:'center',justifyContent:'center',padding:5}}>
+                {/* <Text>logout</Text> */}
+                 <Image style={styles.signout_icon} source={require('../../assets/images/dashboard/sign-out-icon.png')} />
+
+            </TouchableOpacity>
           </View>
 
           {/* Accordions for Supportive Souls and Scholar Details */}
@@ -276,9 +322,9 @@ const More = () => {
               <Image style={styles.socialIcon} source={require('../../assets/images/dashboard/linkedin_icon.png')}/>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => console.log('Facebook clicked')}>
+            {/* <TouchableOpacity onPress={() => console.log('Facebook clicked')}>
               <Image style={styles.socialIcon} source={require('../../assets/images/dashboard/facebook_icon.png')}/>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             </View>
         </View>
@@ -348,11 +394,29 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
   },
+  signout_icon:{
+    width:38,
+    height:38,
+  },
+  initialsContainer:{
+    width: 70, // Circular Image
+    height: 70,
+    borderRadius: 35,
+    borderWidth:1,
+    borderColor:'#EAEAEA',
+    padding:5,
+  },
+  initialsText:{
+    fontSize:40,
+    textAlign:'center',
+    justifyContent:'center',
+    fontFamily:'PP_Regular'
+  },
   profileDetails: {
     marginLeft: 15,
   },
   profileName: {
-    fontSize: 25,
+    fontSize: 20,
     fontFamily:'PP_Medium',
     color: '#000000',
   },
