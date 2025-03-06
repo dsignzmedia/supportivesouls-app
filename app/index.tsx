@@ -22,7 +22,7 @@ const Index = () => {
   useEffect(() => {
     const hideSplashScreen = async () => {
       // Simulate a 5-second delay before hiding the splash screen
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       setIsSplashVisible(false); // Hide splash screen
       await SplashScreen.hideAsync(); // Manually hide the splash screen
     };

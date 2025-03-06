@@ -1,10 +1,13 @@
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Platform ,Animated,Linking, Alert } from 'react-native';
+import React, { useEffect, useState ,useRef } from 'react';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { Link } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useSearchParams } from 'expo-router/build/hooks';
 import { getScholarDetails } from '@/app/services/service';
+import CustomBottomsheetModel from "@/components/common/CustomBottomsheetModel";
+import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+
 
 const ScholarsDetails = () => {
 
@@ -12,7 +15,7 @@ const ScholarsDetails = () => {
 
 
   console.log(id); 
-
+ 
     const [selectedTab, setSelectedTab] = useState('Financial Support');
     const [scholarDetails, setScholarDetails] = useState({course:'',college:"",category:"",});
     const [scholarShipDetails, setScholarShipDetails] = useState();
@@ -22,15 +25,21 @@ const ScholarsDetails = () => {
     const [donationAmount, setDonationAmount] = useState('');
 
     const [Created_at, setCreated_at] = useState('');
+    const [loading, setLoading] = useState(true);
+    const fadeAnim = useRef(new Animated.Value(0.5)).current;
+    const secondSheetRef = useRef<BottomSheetModal>(null);
+      
+      const handleOpenDetails = () => {
+        secondSheetRef.current?.present();
+      };
 
-    
+
   const [expandedIndex, setExpandedIndex] = useState(0); 
   // const [expandedIndex, setExpandedIndex] = useState(null);
 
   const toggleAccordion = (index) => {
     setExpandedIndex(expandedIndex === index ? null : index);
   };
-
   useEffect(() => {
     const getScholarDetail = async (id: any) => {
       const res =  await getScholarDetails(id);
@@ -42,7 +51,7 @@ const ScholarsDetails = () => {
       setCreated_at(res.created_at);
       setScholarName(res.scholar_name);
       setDocumentDetails(res.documents)
-
+      setLoading(false);
       console.warn('res => ', res)
       console.warn('scholar_details => ', res.scholarship_details)
       console.warn('donated_amount => ', res.donation_amount)
@@ -50,10 +59,49 @@ const ScholarsDetails = () => {
 
     }
    getScholarDetail(id);
+   Animated.loop(
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0.5,
+        duration: 500,
+        useNativeDriver: true,
+      })
+    ])
+  ).start();
   }, []);
+    const router = useRouter();
+
+  // const openDonationDashboard = () => {
+  //   // Clear form fields
+    
+  //   // Redirect to Dashboard
+  //   router.replace('/(tabs)/Donations');
+  // };
+ 
+  const SkeletonLoader = () => (
+    <Animated.View style={[styles.skeletonCard, { opacity: fadeAnim }]}> 
+      <View style={styles.skeletonText} />
+      <View style={styles.skeletonText} />
+      <View style={styles.skeletonText} />
+    </Animated.View>
+  );
+
+ // Function to open UPI apps with deep linking
+  const openPaymentApp = (upiId: string, appPackage: string) => {
+    const url = `upi://pay?pa=${upiId}&pn=Supportive Souls&cu=INR`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert("Error", `Please install ${appPackage} to continue`);
+    });
+  };
 
 
   return (
+    <BottomSheetModalProvider>
     <View style={styles.container}>
       <HeadersImage>
         <View style={styles.headerContainer}>
@@ -70,6 +118,13 @@ const ScholarsDetails = () => {
       </HeadersImage>
 
       <ScrollView>
+      {loading ? (
+          <>
+            <SkeletonLoader />
+            <SkeletonLoader />
+            <SkeletonLoader />
+          </>
+        ) : scholarDetails && scholarShipDetails ? (
         <View style={styles.header}>
           <View style={{ marginBottom: 20 }}>
             <Text style={styles.highlightText}>
@@ -137,7 +192,7 @@ const ScholarsDetails = () => {
             }
           />
 
-          <Accordion
+          {/* <Accordion
             title="Documents Submitted"
             expanded={expandedIndex === 3}
             onPress={() => toggleAccordion(3)}
@@ -149,9 +204,9 @@ const ScholarsDetails = () => {
                 </TouchableOpacity>
               </View>
             }
-          />
+          /> */}
 
-          <Accordion
+          {/* <Accordion
             title="Payment Details"
             expanded={expandedIndex === 4}
             onPress={() => toggleAccordion(4)}
@@ -166,28 +221,117 @@ const ScholarsDetails = () => {
                     <Text style={styles.paymentDate}>{Created_at}</Text>
                     <Text style={styles.paymentSubLabel}>Date</Text>
                   </View>
-                  {/* <View>
-                    <Text style={styles.nextPayment}>05 June, 2025</Text>
-                    <Text style={styles.paymentSubLabel}>Next Payment</Text>
-                  </View> */}
                 </View>
               </View>
             }
-          />
+          /> */}
 
 
         </View>
+        ) : (
+          // 🔹 "No Records Found" Message
+          <View style={styles.noRecordsContainer}>
+            <Text style={styles.noRecordsText}>No Records Found</Text>
+          </View>
+        )}
       </ScrollView>
          <View>
           <View>
               <Text style={styles.impactText}>To contribute more for this student</Text>
             </View>
 
-            <TouchableOpacity style={styles.donateButton}>
+            <TouchableOpacity style={styles.donateButton} activeOpacity={0.8} onPress={handleOpenDetails}>
               <Text style={styles.donateButtonText}>Donate Now</Text>
             </TouchableOpacity>
           </View>
     </View>
+    {/* Bottom Sheet */}
+    <CustomBottomsheetModel
+      bottomSheetRef={secondSheetRef}
+      snapPoints={['75%', '100%']}
+      initialIndex={0}
+      showHandleIndicator={true}
+    >
+      <View style={styles.bottomSheetContainer}>
+
+        {/* Heading & Description */}
+        <View style={{marginBottom: 20}}>
+          <Text style={styles.heading}>Donate</Text>
+          <Text style={styles.content}>
+            We are committed towards making a positive impact in the lives of those in need. Our programs and services focus on 
+            education, fight-hunger, and community development, and we rely on the generosity of donors like you to continue 
+            our work. We thank you for considering a donation to our charity trust and for helping us to create a brighter future for all.
+          </Text>
+        </View>
+
+        {/* Donation Details */}
+        <View style={styles.detailsContainer}>
+          <View style={{borderWidth:1, padding:10,borderRadius:10, borderColor:'#E0E0E0',width:'100%'}}>
+        
+            <View style={styles.detailRow}>
+              {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+              <Text style={styles.label}>Account Number:</Text>
+              <Text style={styles.value}>1169120030000442</Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+              <Text style={styles.label}>Account Name:</Text>
+              <Text style={styles.value}>SUPPORTIVE SOULS CHARITABLE TRUST</Text>
+            </View>
+            
+            <View style={styles.detailRow}>
+              {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+              <Text style={styles.label}>IFSC:</Text>
+              <Text style={styles.value}>UJVN0001169</Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+              <Text style={styles.label}>Account Type:</Text>
+              <Text style={styles.value}>Current Account</Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+              <Text style={styles.label}>UPI ID:</Text>
+              <Text style={[styles.value, styles.upiId]}>ujjbb8398972371@ujjivan</Text>
+            </View>
+          </View>
+
+          {/* QR Code
+          <Image 
+            source={require('../../assets/qr-code.png')} 
+            style={styles.qrCode} 
+            resizeMode="contain"
+          /> */}
+        </View>
+
+        {/* Payment Icons */}
+        <View style={styles.paymentContainer}>
+          <Text style={styles.heading}>Donate via UPI</Text>
+          <View style={styles.iconContainer}>
+            {/* PhonePe */}
+            <TouchableOpacity onPress={() => openPaymentApp('ujjbb8398972371@upi', 'PhonePe')}>
+              <Image source={require('../../assets/images/amount-icon/google-pay.png')} style={styles.icon} />
+            </TouchableOpacity>
+
+            {/* Google */}
+            <TouchableOpacity onPress={() => openPaymentApp('ujjbb8398972371@paytm', 'Paytm')}>
+              <Image source={require('../../assets/images/amount-icon/phone-pe.png')} style={styles.icon} />
+            </TouchableOpacity>
+
+            {/*Paytm Pay */}
+            <TouchableOpacity onPress={() => openPaymentApp('ujjbb8398972371@upi', 'Google Pay')}>
+              <Image source={require('../../assets/images/amount-icon/paytm-icons.png')} style={styles.icon} />
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </View>
+    </CustomBottomsheetModel>
+        </BottomSheetModalProvider>
+    
   );
 };
 
@@ -531,6 +675,83 @@ color: '#fff',
 fontSize: 15,
 fontFamily:'PP_SemiBold',
 },
+skeletonCard: { padding: 16, marginVertical: 8, backgroundColor: '#e0e0e0', borderRadius: 8 },
+  skeletonText: { height: 20, backgroundColor: '#d6d6d6', marginBottom: 10, borderRadius: 5 },
+  
+  noRecordsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  noRecordsText: {
+    fontSize: 16,
+    color: '#888',
+    fontWeight: 'bold',
+  },
+  bottomSheetContainer:{
+    padding: 16,
+  },
+  heading:{
+    fontSize: 18,
+    fontFamily:'PP_Bold',
+    color: '#000000',
+    marginBottom: 16,
+  },
+  // content:{
+  //   fontSize: 14,
+  //   fontFamily:'PP_Regular',
+  //   color: '#333',
+  //   textAlign: 'justify',
+  //   lineHeight: 20,
+  // },
+  detailsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    // marginTop: 10,
+  },
+  // detailRow: {
+  //   // flexDirection: 'row',
+  //   // alignItems: 'center',
+  //   marginBottom: 8,
+  // },
+  label: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    // marginLeft: 5,
+    color: '#333',
+    marginBottom: 5,
+  },
+  value: {
+    fontSize: 14,
+    marginLeft: 5,
+    color: '#666',
+  },
+  upiId: {
+    color: 'green',
+  },
+  qrCode: {
+    width: 100,
+    height: 100,
+    marginLeft: 20,
+  },
+  paymentContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: '20%',
+  },
+  iconContainer: {
+    marginRight: 6,
+    // display:'flex',
+    flexDirection:'row',
+  },
+
+  // icon: {
+  //   width: 50,
+  //   height: 50,
+  //   marginHorizontal: 10,
+  //   resizeMode: 'contain',
+  // },
 });
 
 export default ScholarsDetails;

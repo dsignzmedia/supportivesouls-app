@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity,ScrollView,Modal,Image ,Platform} from 'react-native';
-import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet,TextInput, TouchableOpacity,ScrollView,Modal,Image ,Platform,Animated} from 'react-native';
+import React, { useState, useEffect,useRef } from 'react';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { router } from 'expo-router';
 import axios from 'axios';
@@ -8,12 +8,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
 
-const Scholars = ({children}:any) => {
+const Scholars = () => {
 
   const [modalVisible, setModalVisible] = useState(false);
   // db value show 
+  const [loading, setLoading] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(0.5)).current;
   const [totallyBenifited, setTotallyBenifited] = useState(0);
   const [scholarsData, setScholarsData] = useState([]);
+  const scrollViewRef = useRef(null);
+  const [isScrollVisible, setIsScrollVisible] = useState(false);
+  const [filteredScholars, setFilteredScholars] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const scrollY = useRef(new Animated.Value(0)).current; // Animated scroll value
+
   const init = async () => {
     const user = await getAsyncData('userDetails');
     const data = await scholarDetails(user.id);
@@ -24,11 +32,27 @@ const Scholars = ({children}:any) => {
        scholarDetails = scholarDetails.filter(e => e.donation_type != 'social_impact');
         setScholarsData(scholarDetails);
         setTotallyBenifited(scholarDetails.length);
+        setFilteredScholars(scholarDetails);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
     init();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0.5,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
   }, []);
 
   // scholars date
@@ -67,33 +91,38 @@ const Scholars = ({children}:any) => {
       };
       // const navigation = useNavigation();
 
-  // const openScholarsDetails =()=>{
-  //   // alert('ok');
-  //   router.push('/Scholarsdetails')
-  // }
-  const scholarData = [
-    {
-      name: 'Karthick N',
-      course: 'B. Voc Banking Stock and Insurance',
-      college: 'PSG College of Arts & Science',
-      amount: '₹ 5,000.00',
-      date: '05 Sep 2024'
-    },
-    {
-      name: 'Sneka J',
-      course: 'B.Sc. Catering Science & Hotel Mgmt',
-      college: 'CSI Bishop Appasamy College of Arts...',
-      amount: '₹ 5,000.00', 
-      date: '25 Jul 2024'
-    },
-    {
-      name: 'Karthir S',
-      course: 'B. Voc Banking Stock and Insurance',
-      college: 'PSG College of Arts & Science',
-      amount: '₹ 5,000.00',
-      date: '05 Sep 2024'
-    },
-  ];
+ 
+  const SkeletonLoader = () => (
+    <Animated.View style={[styles.skeletonCard, { opacity: fadeAnim }]}> 
+      <View style={styles.skeletonText} />
+      <View style={styles.skeletonText} />
+      <View style={styles.skeletonText} />
+    </Animated.View>
+  );
+
+  // Function to track scroll position
+  const handleScroll = (event) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    setIsScrollVisible(offsetY > 200);
+};
+
+// Function to smoothly scroll to the top
+const scrollToTop = () => {
+    if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+};
+
+// Search functionality
+useEffect(() => {
+  const filtered = scholarsData.filter((scholar) =>
+    scholar.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  setFilteredScholars(filtered);
+}, [searchQuery, scholarsData]);
+
+
+
 
   return (
     <View style={styles.container}>
@@ -102,17 +131,45 @@ const Scholars = ({children}:any) => {
           <Text style={styles.scholarsname}>Scholars Benefited</Text>
         </View>
       </HeadersImage>
+      
+      <View style={{padding: 10}}>
+        {/* Scholars count */}
+        {loading ? (
+          <Animated.View style={[styles.skeletonText, { opacity: fadeAnim }]} />
+        ) : (
+          <Text style={styles.supportText}>
+            You have supported <Text style={styles.highlightText}>{filteredScholars?.length || 0} Scholars</Text>
+          </Text>
+        )}
+        <View style={styles.searchContainer}>
+          {/* Search Bar */}
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by Name"
+           placeholderTextColor="#888"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        </View>
+      </View>
 
-      <ScrollView>
+      <Animated.ScrollView  
+      ref={scrollViewRef} 
+      onScroll={handleScroll} 
+      scrollEventThrottle={16}
+      >
         <View style={styles.content}>
 
-        {/* Scholars count */}
-        <Text style={styles.supportText}>
-          You have supported <Text style={styles.highlightText}>{totallyBenifited} Scholars</Text>
-        </Text>
+        
 
-        {/* Scholars list */}
-        {scholarsData.map((scholar: any, index) => (
+        {loading ? (
+            <>
+              <SkeletonLoader />
+              <SkeletonLoader />
+              <SkeletonLoader />
+            </>
+          ) : filteredScholars.length > 0 ? (
+            filteredScholars.map((scholar: any, index) => (
           <View key={index} style={styles.card}>
             {/* Scholar name */}
             <View style={styles.labelGroup}>
@@ -149,11 +206,22 @@ const Scholars = ({children}:any) => {
               <Text style={styles.buttonText}>More Information</Text>
             </TouchableOpacity>
           </View>
-        ))}
+          ))
+        ) : (
+          // 🔹 "No Records Found" Message
+          <View style={styles.noRecordsContainer}>
+            <Text style={styles.noRecordsText}>No Records Found</Text>
+          </View>
+        )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
-       
+      {isScrollVisible && (
+                <TouchableOpacity onPress={scrollToTop} style={styles.scrollToTopButton}>
+                    <Ionicons name="arrow-up" size={24} color="white" />
+                </TouchableOpacity>
+            )}
+
 
     </View>
   );
@@ -253,7 +321,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
- 
+  skeletonCard: { padding: 16, marginVertical: 8, backgroundColor: '#e0e0e0', borderRadius: 8 },
+  skeletonText: { height: 20, backgroundColor: '#d6d6d6', marginBottom: 10, borderRadius: 5 },
+  noRecordsContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  noRecordsText: {
+    fontSize: 16,
+    color: '#888',
+    fontWeight: 'bold',
+  },
+  scrollToTopButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#4caf50',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+},
+// searchBar: {
+//   height: 40,
+//   borderColor: '#ddd',
+//   borderWidth: 1,
+//   borderRadius: 8,
+//   paddingHorizontal: 10,
+//   marginBottom: 10,
+// },
+searchInput: {
+  flex: 1,
+  height: 40,
+  borderColor: '#ccc',
+  borderWidth: 1,
+  borderRadius: 28,
+  paddingHorizontal: 10,
+  marginRight: 8,
+},
+searchContainer: {
+  marginBottom: 15,
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 10,
+},
 });
 
 export default Scholars;

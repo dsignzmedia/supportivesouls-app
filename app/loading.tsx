@@ -1,4 +1,4 @@
-import React , { useRef, useState,useCallback }from "react";
+import React , { useRef, useState,useCallback, useEffect }from "react";
 import { StyleSheet, Text, View, TouchableOpacity, Image,KeyboardAvoidingView,Keyboard, SafeAreaView,ImageBackground,Platform ,Dimensions,Modal,TextInput,Alert} from "react-native";
 import { navigate } from 'expo-router/build/global-state/routing';
 import { useNavigation } from '@react-navigation/native'; 
@@ -12,7 +12,7 @@ import CustomBottomsheetModel from "@/components/common/CustomBottomsheetModel";
 import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import PhoneInput from 'react-native-phone-number-input';   
 import axios from 'axios';
-import { JionWithUsForm } from '@/app/services/service';
+import { JionWithUsForm, getAsyncData, isAlreadyLoggedIn} from '@/app/services/service';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,12 +21,44 @@ const openLogin = ()=> {
 }
 
 
-// Adjust height based on platform
+// Adjust height based on p
+// latform
 const adjustedHeight = Platform.OS === "ios" ? height - 285 : height - 80;
 
-export default function LoadingPage() {
 
+export default  function LoadingPage() {
+// export default async function LoadingPage() {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+    useEffect(() => {
+      try {
+        isAlreadyLoggedIn().then(() => {
+          // setIsLoaded(true);
+        }).catch(() => {
+          // setIsLoaded(true)
+        }).finally(() => {
+          setIsLoaded(true);
+        });
+      }catch(err) {
+        console.error(err)
+      }
+    }), [];
+
+    // useEffect(() => {
+    //   const checkLogin = async () => {
+    //     try {
+    //       await isAlreadyLoggedIn();
+    //     } catch (err) {
+    //       console.error(err);
+    //     } finally {
+    //       setIsLoaded(true);
+    //     }
+    //   };
   
+    //   checkLogin();
+    // }, []); // Add dependencies properly
+
+    
   // const openJoinWithUs = () => {
   //   setModalVisible(true);
   // };
@@ -34,6 +66,8 @@ export default function LoadingPage() {
   // const closeJoinWithUs = () => {
   //   setModalVisible(false);
   // };
+
+  
 
     // form 
     const [flashMessage, setFlashMessage] = useState({ type: '', message: '' });
@@ -53,8 +87,20 @@ export default function LoadingPage() {
        const [month, setMonth] = useState('');
        const [year, setYear] = useState('');
        const [gender, setGender] = useState('');
+      //  const [errors, setErrors] = useState({});
      // date picker
+     const [errors, setErrors] = useState({
+      name: { status: false, message: '' },
+      email: { status: false, message: '' },
+      phone: { status: false, message: '' },
+      address: { status: false, message: '' },
+      city: { status: false, message: '' },
+      state: { status: false, message: '' },
+      selected: { status: false, message: '' },
+      postalcode: { status: false, message: '' },
+    });
     
+
         const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
         const [selectedDate, setSelectedDate] = useState("Select a DOB");
     
@@ -130,54 +176,72 @@ export default function LoadingPage() {
 
         const navigation = useNavigation(); 
         
+        const validateEmail = (email) => {
+          const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+          return emailRegex.test(email);
+        };
+
         const handleSubmit = async () => {
-    if (!name || !email || !formattedNumber || !address || !city || !state || !selected || !postalcode) {
-      setFlashMessage({ type: 'error', message: 'Please fill in all required fields.' }); 
-      setTimeout(() => setFlashMessage({ type: '', message: '' }), 1000);
-      return;
-    }
-
-    try {
-      const formData = {
-        name: name,
-        email: email,
-        phone: formattedNumber,
-        address: address,
-        city: city,
-        state: state,
-        country: selected.label,
-        postal_code: postalcode,
-      };
-
-      console.warn('formData => ', formData);
-      const response = await JionWithUsForm(formData);
-
-      console.log('API Response:', response); // Debug response
-      if (response && response.success) {
-        setFlashMessage({ type: 'success', message: 'Form submitted successfully!' }); // Success flash message
-        setTimeout(() => setFlashMessage({ type: '', message: '' }), 1000);
+          let newErrors = {
+            name: { status: !name },
+            email: { status: !email },
+            phone: { status: !formattedNumber },
+            address: { status: !address },
+            city: { status: !city },
+            state: { status: !state },
+            selected: { status: !selected },
+            postalcode: { status: !postalcode },
+          };
+        
+          setErrors(newErrors);
+        
+          if (Object.values(newErrors).some(error => error.status)) {
+            return;
+          }
+        
+          // Proceed with form submission if no errors
+          try {
+            const formData = { name, email, phone: formattedNumber, address, city, state, country: selected?.label, postal_code: postalcode };
+        
+            console.warn('formData => ', formData);
+            const response = await JionWithUsForm(formData);
+        
+            if (response && response.success) {
+              setFlashMessage({ type: 'success', message: 'Form submitted successfully!' });
+              setTimeout(() => setFlashMessage({ type: '', message: '' }), 1000);
         // Redirect after a short delay to show the message
         setTimeout(() => {
-          secondSheetRef.current?.close();
-          setName('');
-          setEmail('');
-          setMobileNumber('');
-          setAddress('');
-          setCity('');
-          setState('');
-          setSelected(null);
-          setPostalcode('');
-        }, 1000);
-      } else if (response && response.message) {
-        setFlashMessage({ type: 'error', message: response.message }); // Backend error message
-      } else {
-        setFlashMessage({ type: 'error', message: 'Unexpected response. Please try again.' });
-      }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      setFlashMessage({ type: 'error', message: `An error occurred. Please try again. ${error.message}` });
-    }
-  };
+              secondSheetRef.current?.close();
+                setName('');
+                setEmail('');
+                setMobileNumber('');
+                setAddress('');
+                setCity('');
+                setState('');
+                setSelected(null);
+                setPostalcode('');
+                setErrors({
+                  name: { status: false, message: '' },
+                  email: { status: false, message: '' },
+                  phone: { status: false, message: '' },
+                  address: { status: false, message: '' },
+                  city: { status: false, message: '' },
+                  state: { status: false, message: '' },
+                  selected: { status: false, message: '' },
+                  postalcode: { status: false, message: '' },
+                });
+              }, 1000);
+            } else {
+              setFlashMessage({ type: 'error', message: response.message || 'Unexpected response. Please try again.' });
+            }
+          } catch (error) {
+            console.error('Error submitting form:', error);
+            setFlashMessage({ type: 'error', message: `An error occurred. Please try again. ${error.message}` });
+          }
+        };
+        
+        
+        
 
   const handleCancel = () => {
     // Reset the input value
@@ -228,7 +292,7 @@ export default function LoadingPage() {
   
 
 
-  return (
+  return ( isLoaded && (
     
     <BottomSheetModalProvider>
 
@@ -311,24 +375,40 @@ export default function LoadingPage() {
               
                           {/* Name Field */}
                           <FloatingLabelInput
-                              label="Name*"
-                              value={name}
-                              style={styles.inputStyles}
-                              containerStyles={styles.containerStyles}
-                              labelStyles={styles.labelStyles}
-                              onChangeText={value => setName(value)}
+                            label="Name*"
+                            value={name}
+                            style={[styles.inputStyles, errors.name.status ? styles.errorInput : null]}
+                            containerStyles={[styles.containerStyles,errors.email.status && styles.errorInput]}
+                            labelStyles={styles.labelStyles}
+                            onChangeText={(value) => {
+                              setName(value);
+                              if (errors.name.status) setErrors({ ...errors, name: { status: false, message: '' } });
+                            }}
                           />
                           {/* Email Field */}
-                          <FloatingLabelInput
-                              label="Email*"
-                              value={email}
-                              keyboardType="email-address"
-                              style={styles.inputStyles}
-                              containerStyles={styles.containerStyles}
-                              labelStyles={styles.labelStyles}
-                              onChangeText={(value) => setEmail(value)}
+                          {/* <View style={[styles.inputContainer, errors.email.status && styles.errorInput]}> */}
+                            <FloatingLabelInput
+                            label="Email*"
+                            value={email}
+                            keyboardType="email-address"
+                            style={styles.inputStyles}
+                            containerStyles={[styles.containerStyles, errors.email.status ? styles.errorInput : null]}
+                            labelStyles={styles.labelStyles}
+                            onChangeText={(value) => {
+                              setEmail(value);
+
+                              if (!validateEmail(value)) {
+                                setErrors({
+                                  ...errors,
+                                  email: { status: true, message: 'Invalid email format (e.g., example@gmail.com)' },
+                                });
+                              } else {
+                                setErrors({ ...errors, email: { status: false, message: '' } });
+                              }
+                            }}
                           />
-                          
+                          {/* </View> */}
+
               
                           {/* PAN Field */}
                           {/* <FloatingLabelInput
@@ -455,92 +535,116 @@ export default function LoadingPage() {
                                   onChangeText={value => setMobileNumber(value)}
                               /> */}
               
-                              <View style={styles.numContainer}>
-                                  <PhoneInput
-                                      defaultValue={phone}
-                                      defaultCode="IN" 
-                                      layout="first" 
-                                      onChangeText={(text) => setMobileNumber(text)} 
-                                      onChangeFormattedText={(text) => setFormattedNumber(text)} 
-                                      onChangeCountry={(country) => setCountryCode(country.callingCode[0])} 
-                                      placeholder="Enter your phone number*"
-                                      containerStyle={[styles.inputContainer, styles.noShadow]}
-                                      textContainerStyle={styles.textContainer}
-                                      textInputStyle={styles.textInputNum}
-                                      flagButtonStyle={styles.flagButton}
-                                      textInputProps={{
-                                        placeholderTextColor: '#AFAFAF',
-                                      }}
-                                      withDarkTheme={false} 
-                                      withShadow={false} 
-                                  />
+                              <View style={[styles.numContainer, errors.phone.status ? styles.errorInput : null]}>
+                                <PhoneInput
+                                  defaultValue={phone}
+                                  defaultCode="IN"
+                                  layout="first"
+                                  onChangeFormattedText={(text) => {
+                                    setFormattedNumber(text);
+                                    if (errors.phone.status) setErrors({ ...errors, phone: { status: false } });
+                                  }}
+                                  placeholder="Enter your phone number*"
+                                  containerStyle={[
+                                    styles.inputContainer,
+                                    styles.noShadow,
+                                    errors.phone.status ? styles.errorInput : null, // ✅ Apply error border directly to PhoneInput container
+                                  ]}
+                                  textContainerStyle={styles.textContainer}
+                                  textInputStyle={styles.textInputNum}
+                                  flagButtonStyle={styles.flagButton}
+                                  textInputProps={{
+                                    placeholderTextColor: '#AFAFAF',
+                                  }}
+                                />
                               </View>
+
+
               
               
                               {/* Address Number Field */}
                               <FloatingLabelInput
-                                  label="Address"
-                                  value={address}
-                                  multiline={true} // Enable multiline
-                                  numberOfLines={4} // Adjust height
-                                  style={[styles.inputStyles, { height: 100 }]} // Add height to the input
-                                  containerStyles={styles.containerStyles}
-                                  labelStyles={styles.labelStyles}
-                                  onChangeText={value => setAddress(value)}
+                                label="Address"
+                                value={address}
+                                multiline
+                                numberOfLines={4}
+                                style={[styles.inputStyles, { height: 100 }, errors.address.status ? styles.errorInput : null]}
+                                containerStyles={[styles.containerStyles, errors.address.status && styles.errorInput]}
+                                labelStyles={styles.labelStyles}
+                                onChangeText={(value) => {
+                                  setAddress(value);
+                                  if (errors.address.status) setErrors({ ...errors, address: { status: false } });
+                                }}
                               />
+
                               {/* City Field */}
-                              <FloatingLabelInput
-                                  label="City"
-                                  value={city}
-                                  style={styles.inputStyles}
-                                  containerStyles={styles.containerStyles}
-                                  labelStyles={styles.labelStyles}
-                                  onChangeText={value => setCity(value)}
+                              <FloatingLabelInput 
+                                label="City"
+                                value={city}
+                                style={[styles.inputStyles, errors.city.status ? styles.errorInput : null]}
+                                containerStyles={[styles.containerStyles, errors.city.status && styles.errorInput]}
+                                labelStyles={styles.labelStyles}
+                                onChangeText={(value) => {
+                                  setCity(value);
+                                  if (errors.city.status) setErrors({ ...errors, city: { status: false } });
+                                }}
                               />
+
               
                               {/* State Field */}
                               <FloatingLabelInput
-                                  label="State"
-                                  value={state}
-                                  style={styles.inputStyles}
-                                  containerStyles={styles.containerStyles}
-                                  labelStyles={styles.labelStyles}
-                                  onChangeText={value => setState(value)}
+                                label="State"
+                                value={state}
+                                style={[styles.inputStyles, errors.state.status ? styles.errorInput : null]}
+                                containerStyles={[styles.containerStyles, errors.state.status && styles.errorInput]}
+                                labelStyles={styles.labelStyles}
+                                onChangeText={(value) => {
+                                  setState(value);
+                                  if (errors.state.status) setErrors({ ...errors, state: { status: false } });
+                                }}
                               />
+
                              
-              
-                              <View>
-                                  <View style={styles.countryContainer}>
-                                  {!!selected && (
-                                      <Text>
-                                      {/* Selected: label = {selected.label}, value = {selected.value} */}
-                                      </Text>
-                                  )}
-                                  <Dropdown
-                                      style={styles.dropdown}
-                                      containerStyle={{
-                                          maxHeight: Dimensions.get('window').height * 0.4, // Limit dropdown height to 40% of screen height
-                                        }}
-                                      data={data}
-                                      labelField="label"
-                                      valueField="value"
-                                      placeholder="Select Country"
-                                      value={selected?.value}
-                                      onChange={(item) => setSelected(item)}
-                                  />
-                                  </View>
-                              </View> 
+                              <View
+                                style={[
+                                  styles.countryContainer,
+                                  errors.selected.status ? styles.errorInput : null,
+                                ]}
+                              >
+                                <Dropdown
+                                  style={[styles.dropdown, errors.selected.status && styles.errorInput]}
+                                  containerStyle={{
+                                    maxHeight: Dimensions.get('window').height * 0.4,
+                                  }}
+                                  data={data}
+                                  labelField="label"
+                                  valueField="value"
+                                  placeholder="Select Country"
+                                  value={selected?.value}
+                                  onChange={(item) => {
+                                    setSelected(item);
+                                    if (errors.selected.status) {
+                                      setErrors({ ...errors, selected: { status: false } });
+                                    }
+                                  }}
+                                />
+                              </View>
+
+
 
                               {/* postal Code */}
                               <FloatingLabelInput
-                              label="Postal Code"
-                              value={postalcode}
-                              // keyboardType="postal-code"
-                              style={styles.inputStyles}
-                              containerStyles={styles.containerStyles}
-                              labelStyles={styles.labelStyles}
-                              onChangeText={value => setPostalcode(value)}
-                          />
+                                label="Postal Code"
+                                value={postalcode}
+                                style={[styles.inputStyles, errors.postalcode.status ? styles.errorInput : null]}
+                                containerStyles={[styles.containerStyles, errors.postalcode.status && styles.errorInput]}
+                                labelStyles={styles.labelStyles}
+                                onChangeText={(value) => {
+                                  setPostalcode(value);
+                                  if (errors.postalcode.status) setErrors({ ...errors, postalcode: { status: false } });
+                                }}
+                              />
+
                           </View>
                           
                               
@@ -559,8 +663,9 @@ export default function LoadingPage() {
       </View>
       {/* </KeyboardAvoidingView> */}
 
-      </BottomSheetModalProvider>
+      </BottomSheetModalProvider>)
   );
+
 }
 
 const styles = StyleSheet.create({
@@ -682,9 +787,13 @@ labelStyles: {
     color:'#00000',
 },
 inputStyles: {
-    color: '#000000',
+    // color: '#000000',
+    // borderRadius: 5,
+    // textDecorationLine:'none',
+    // borderWidth: 1,
+    // borderColor: '#ccc', // Default border color
+    padding: 10,
     borderRadius: 5,
-    textDecorationLine:'none',
 },
 // submitButton: {
 //     backgroundColor: '#4CAF50',
@@ -918,14 +1027,23 @@ submitButtonText: {
     borderRadius: 10,
   },
   success: {
-    backgroundColor: 'green',
+    backgroundColor: '#85e085',
   },
   error: {
-    backgroundColor: 'red',
+    backgroundColor: '#ff6666',
   },
   flashText: {
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  errorInput: {
+    // borderColor: 'red',
+    borderColor :'#DC143C',
+  },
+  errorText: {
+    color: 'orange', // Orange text for error message
+    fontSize: 12,
+    marginLeft: 5,
   },
 });

@@ -4,13 +4,14 @@ import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View, TouchableOpacity, Image,ScrollView, SafeAreaView, ImageBackground, Platform, Dimensions, TextInput,Alert } from "react-native";
 import { router } from "expo-router";
 import { useNavigation } from '@react-navigation/native';
-import { signin, storeAsyncData } from "./services/service";
+import { getAsyncData, signin, storeAsyncData } from "./services/service";
 import { FloatingLabelInput } from "react-native-floating-label-input";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from 'expo-router';
 // import LoadingPage from "./loading";
 import FlashMessage, { showMessage } from "react-native-flash-message";
+import { dismissAll } from "expo-router/build/global-state/routing";
 
 const { width, height } = Dimensions.get('window');
 
@@ -55,7 +56,8 @@ export default function LoginPage() {
   };
 
   const handleCancel = () => {
-    navigation.goBack();
+    // navigation.goBack();
+    router.back();
     // console.log(navigation.getState());
   };
 
@@ -66,27 +68,28 @@ export default function LoginPage() {
 
     if (res?.status === 200 && res.success) {
         await storeAsyncData('userDetails', res.user);
+        console.warn('login res => ', res)
+        const token = await getAsyncData('authToken');
+        console.warn('token => ',  token)
 
          // Show success message
       showMessage({
-        message: "Login Successful",
-        description: "Welcome back!",
+        message: "Login Successful!",
+        // description: "Welcome back!",
         type: "success",
         icon: "success",
-        duration: 1000,
+        duration: 2000,
         backgroundColor: "#4CAF50", 
         color: "#FFFFFF", 
         textStyle: { fontSize: 16, fontWeight: "bold" },
         titleStyle: { fontSize: 18 }, 
       });
         
-      // Navigate to Dashboard
-      try {
+      setTimeout(() => {
+        router.dismissAll();
         router.replace('/(tabs)/Dashboard');
         console.log('Navigation successful to Dashboard');
-      } catch (error) {
-        console.error('Failed to navigate to Dashboard:', error);
-      }
+      }, 2000); 
 
         // Navigate to Dashboard
         // router.replace('/(tabs)/Dashboard');
@@ -112,7 +115,7 @@ export default function LoginPage() {
 
   return (
     <View style={styles.container}>
-      
+                  <FlashMessage position="center" />
             {/* {flashMessage.message && (
               <View
                 style={[
@@ -131,7 +134,6 @@ export default function LoginPage() {
           resizeMode="contain"
         />
       </View>
-            <FlashMessage position="center" />
 
       <View style={styles.bottomContainer}>
 
@@ -170,38 +172,33 @@ export default function LoginPage() {
 
 
             {/* Password Field */}
-            <View style={styles.floatingInputContainer}>
-            <FloatingLabelInput
-              label="Password"
-              value={password}
-              isPassword={!isPasswordVisible} // Toggle password visibility
-              customHidePasswordComponent={password !== '' && (
-                <FontAwesome 
-                  name="eye-slash" 
-                  size={20} 
-                  color="#AFAFAF" 
-                  onPress={() => setIsPasswordVisible(false)} // Handle hide password
-                />
-              )}
-              customShowPasswordComponent={password !== '' && (
-                <FontAwesome 
-                  name="eye" 
-                  size={20} 
-                  color="#AFAFAF" 
-                  onPress={() => setIsPasswordVisible(true)} // Handle show password
-                />
-              )}
-              containerStyles={styles.containerStyles}
-              labelStyles={styles.labelStyles}
-              inputStyles={styles.inputStyles}
-              onChangeText={(value) => setPassword(value)}
-            />
-              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text>: null}
-            </View>
+<View style={styles.floatingInputContainer}>
+  <FloatingLabelInput
+    label="Password"
+    value={password}
+    isPassword={!isPasswordVisible} // Toggle password visibility
+    containerStyles={styles.containerStyles}
+    labelStyles={styles.labelStyles}
+    inputStyles={styles.inputStyles}
+    onChangeText={(value) => setPassword(value)}
+  />
+  
+  {/* Show/Hide Text Button */}
+  {password !== '' && (
+    <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+      <Text style={styles.showHideText}>
+        {isPasswordVisible ? 'Hide' : 'Show'}
+      </Text>
+    </TouchableOpacity>
+  )}
+  
+  {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+</View>
+
             {/* Forget Password Link */}
-            <TouchableOpacity style={styles.forgetContainer}> 
+            {/* <TouchableOpacity style={styles.forgetContainer}> 
               <Text style={styles.forgotPasswordText}>Forgot Your Password?</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           {/* </View> */}
  
 
@@ -327,6 +324,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     // alignItems: "center",
+    marginTop:40,
   },
   signInButton: {
     backgroundColor: "#557C0B",
@@ -394,9 +392,11 @@ containerStyles: {
 },
 labelStyles: {
   backgroundColor: '#fff',
+  borderRadius: 5,
   paddingHorizontal: 5,
   fontSize: 17,
   color:'#00000',
+  
 },
 floatingInputContainer: {
     width: 288, // Constrain the width to 288px
@@ -421,4 +421,13 @@ flashText: {
     color: 'white',
     fontWeight: 'bold',
 },
+showHideText: {
+  color: '#AFAFAF',
+  fontSize: 16,
+  position: 'absolute',
+  right: 10,
+  // top: 0,
+  bottom:34,
+}
+
 });

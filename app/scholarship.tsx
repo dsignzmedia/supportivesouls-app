@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable,TextInput, Image, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable,TextInput, Image, FlatList, TouchableOpacity ,Animated} from 'react-native';
 import React, { useEffect, useState, useRef } from 'react';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { Link } from "expo-router";
@@ -15,6 +15,10 @@ const Scholarship = () => {
     const [filteredScholars, setFilteredScholars] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
+    const animatedValue = useRef(new Animated.Value(0)).current;
+    const scrollY = useRef(new Animated.Value(0)).current;
+
+
     useEffect(() => {
         const getScholarDetail = async () => {
             const res = await getAllScholars();
@@ -24,20 +28,42 @@ const Scholarship = () => {
             setLoading(false); 
         };       
         getScholarDetail();
+        // Skeleton animation
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(animatedValue, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animatedValue, {
+                    toValue: 0,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
     }, []);
 
-    const scrollToTop = () => {
-        if (flatListRef.current) {
-            flatListRef.current.scrollToOffset({ offset: 0, animated: true });
-        } else {
-            console.warn('FlatList ref is undefined or not working');
-        }
-    };
+
+    const interpolatedBackground = animatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['#e0e0e0', '#f5f5f5'],
+    });
+
+
+    // const scrollToTop = () => {
+    //     if (flatListRef.current) {
+    //         flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+    //     } else {
+    //         console.warn('FlatList ref is undefined or not working');
+    //     }
+    // };
     
-    const handleScroll = (event) => {
-        const contentOffsetY = event.nativeEvent.contentOffset.y;
-        setIsScrollVisible(contentOffsetY > 200);
-    };
+    // const handleScroll = (event) => {
+    //     const contentOffsetY = event.nativeEvent.contentOffset.y;
+    //     setIsScrollVisible(contentOffsetY > 200);
+    // };
 
     // Function to filter data
     const handleSearch = (query: string) => {
@@ -52,6 +78,25 @@ const Scholarship = () => {
         } else {
             setFilteredScholars(allScholars); // Reset when query is empty
         }
+    };
+
+    // const handleScroll = (event:any) => {
+    //     const contentOffsetY = event.nativeEvent.contentOffset.y;
+    //     setIsScrollVisible(contentOffsetY > 200);
+    // };
+    const scrollToTop = () => {
+        if (flatListRef.current) {
+            setTimeout(() => {
+                flatListRef.current.scrollToOffset({ animated: true, offset: 0 });
+            }, 100); // Delay ensures FlatList is fully rendered before scrolling
+        } else {
+            console.warn("FlatList ref is null or not yet assigned.");
+        }
+    };
+
+    const handleScroll = (event) => {
+        const offsetY = event.nativeEvent.contentOffset.y;
+        setIsScrollVisible(offsetY > 100); // Show button when scrolled down
     };
 
 
@@ -136,24 +181,25 @@ const Scholarship = () => {
         {/* Skeleton Loader or Scholars List */}
                     {loading ? (
                       Array.from({ length: 5 }).map((_, index) => (
-                        <View key={index} style={styles.skeletonCard}>
+                        <Animated.View key={index} style={[styles.skeletonCard, { backgroundColor: interpolatedBackground }]}>
                           <View style={styles.skeletonLine} />
                           <View style={styles.skeletonRow}>
                             <View style={styles.skeletonBox} />
                             <View style={styles.skeletonBox} />
                           </View>
                           <View style={styles.skeletonButton} />
-                        </View>
+                        </Animated.View>
                       ))
                     ) : (
                         
-                        filteredScholars.length === 0 ? (
-                <View style={styles.noRecordsContainer}>
-                    <Text style={styles.noRecordsText}>No records found</Text>
-                </View>
+                    filteredScholars.length === 0 ? (
+                    <View style={styles.noRecordsContainer}>
+                        <Text style={styles.noRecordsText}>No records found</Text>
+                    </View>
             ) : (
 
         <FlatList
+            ref={flatListRef}
             data={filteredScholars || []}
             extraData={filteredScholars}
             keyExtractor={(item, index) => (item.id ? item.id.toString() : index.toString())}
@@ -179,18 +225,23 @@ const Scholarship = () => {
                 </View>
             )}
             contentContainerStyle={{ flexGrow: 1 }}
-            ref={flatListRef}
+            // ref={flatListRef}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+
+            
         />
     ))
 }
     </ScrollView>
 
 
-            {/* {isScrollVisible && (
+                {/* {isScrollVisible && (
                 <TouchableOpacity onPress={scrollToTop} style={styles.scrollToTopButton}>
-                    <Text style={styles.scrollToTopText}><Feather name="arrow-up" size={15} color="#fff" /></Text>
+                    <Feather name="arrow-up" size={20} color="#fff" />
                 </TouchableOpacity>
             )} */}
+
         </View>
     );
 };
@@ -302,15 +353,19 @@ const styles = StyleSheet.create({
       alignItems: 'flex-start',
   },
   scrollToTopButton: {
-      position: 'absolute',
-      bottom: 20,
-      right: 20,
-      backgroundColor: '#95C639',
-      padding: 10,
-      borderRadius: 25,
-      alignItems: 'center',
-      justifyContent: 'center',
-  },
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#4caf50',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+},
   scrollToTopText: {
       fontSize: 14,
       color: '#fff',
@@ -359,7 +414,17 @@ searchContainer: {
     skeletonRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     skeletonBox: { width: '45%', height: 20, backgroundColor: '#ccc', borderRadius: 4 },
     skeletonButton: { height: 40, backgroundColor: '#ddd', borderRadius: 8, marginTop: 8 },
-   
+    noRecordsContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 50,
+    },
+    noRecordsText: {
+        fontSize: 18,
+        color: '#888',
+        fontWeight: 'bold',
+    },
+
 });
 
 export default Scholarship;
