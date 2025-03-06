@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SupportiveSouls",
-    "slug": "supportive-souls",
+    "slug": "SupportiveSoulsApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -41,9 +41,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "8f3c91ba-da20-48f3-82a8-e3df053c7e40"
+        "projectId": "776962eb-1cc8-4fdd-8a64-e237c0a6acd9"
       }
     },
-    "owner": "sapareshan"
+    "owner": "kalidasan"
   }
 }

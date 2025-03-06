@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity, StyleSheet ,ScrollView,Image,Platform,Pressable} from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet ,ScrollView,Image,Platform,Pressable,Animated } from 'react-native';
+import React, { useEffect, useState ,useRef} from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { router } from "expo-router";
@@ -17,6 +17,9 @@ const Dashboard = ({children}:any) => {
   const [yourTotalDonation , setYourTotalDonation] = useState('');
   const [scholarsBenefited, setScholarsBenefited] = useState(0);
   const [userDetails, setUserDetails] = useState({name: '', email: ''});
+  const [loading, setLoading] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(0.3)).current;
+
 
   const setDetails = async () => {
       const data:any = await getAsyncData('userDetails');
@@ -32,19 +35,16 @@ const Dashboard = ({children}:any) => {
     const donationDetails = await yourDonation(data.id); 
     if (donationDetails) {
       console.warn('Donation Details => ', donationDetails);
-      setYourTotalDonation(donationDetails.total); // Set the total donation amount
-      setScholarsBenefited(donationDetails.totalScholars); // Set the total scholars benefited
+      setYourTotalDonation(donationDetails.total); 
+      setScholarsBenefited(donationDetails.totalScholars);
     }
 
     if(data){
       const total = await yourDonation(data.id);
-      const donationDetails = await yourDonation(data.id);
       console.warn('total => ', total);
       setYourTotalDonation(total.total)
     }
-    else{
-      console.log('total is empty')
-    }
+    setLoading(false);
   };
   
     useEffect(() => {
@@ -120,6 +120,15 @@ const getGreeting = () => {
   }
 };
 
+useEffect(() => {
+  Animated.loop(
+    Animated.sequence([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 0.3, duration: 300, useNativeDriver: true }),
+    ])
+  ).start();
+}, []);
+
   return (
     <View style={styles.accordaincontainer}>
       <HeadersImage>
@@ -141,7 +150,12 @@ const getGreeting = () => {
                     resizeMode="contain"
                   />
                   <View style={styles.donationContent}>
-                    <Text style={styles.donationAmount}>₹ {yourTotalDonation}</Text>
+                    {/* <Text style={styles.donationAmount}>₹ {yourTotalDonation || 'N/A'}</Text> */}
+                    {loading ? (
+                        <Animated.View style={[styles.skeletonBox, { opacity: fadeAnim }]} />
+                      ) : (
+                        <Text style={styles.donationAmount}>₹ {yourTotalDonation || 'N/A'}</Text>
+                      )}
                     <Text style={styles.donationLabel}>Your Donation</Text>
                   </View>
                   </TouchableOpacity>
@@ -154,7 +168,12 @@ const getGreeting = () => {
                     resizeMode="contain"
                   />
                   <View style={styles.scholarContent}>
-                    <Text style={styles.scholarAmount}>{scholarsBenefited}</Text>
+                    {/* <Text style={styles.scholarAmount}>{scholarsBenefited || 'N/A'}</Text> */}
+                    {loading ? (
+                        <Animated.View style={[styles.skeletonBox, { opacity: fadeAnim }]} />
+                      ) : (
+                        <Text style={styles.scholarAmount}>{scholarsBenefited || 'N/A'}</Text>
+                      )}
                     <Text style={styles.scholarLabel}>Scholars Benefited</Text>
                   </View>
                   </TouchableOpacity>
@@ -533,6 +552,7 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
   },
+  skeletonBox: { width: 80, height: 20, backgroundColor: '#ccc', borderRadius: 4, marginBottom: 4 },
 });
 
 export default Dashboard;

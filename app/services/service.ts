@@ -1,15 +1,45 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { router } from 'expo-router';
 
 const BASE_URL = 'http://localhost:8000';
-// const PRODUCTION_URL = 'https://supportivesouls.com' ;
-const API_URL = 'http://192.168.29.5:80/supportiveSouls-web/admin/api'; 
+const PRODUCTION_URL = 'https://supportivesouls.com' ;
+// const API_URL = 'http://192.168.29.5:80/supportiveSouls-web/admin/api'; 
 // export const API_URL = 'http://127.0.0.1:80/supportiveSouls-web/admin/api';
-// const API_URL = `${PRODUCTION_URL}/admin/api`;
+// export const API_URL = 'http://172.20.10.2:80/supportiveSouls-web/admin/api';
+const API_URL = `${PRODUCTION_URL}/admin/api`;
 
 export const AssetsUrl ='https://supportivesouls.com/admin/src/assets/gallery';
 
 console.log("API_URL" , API_URL);
+
+const initToken = async () => {
+  const token = await getAsyncData('authToken');
+  apiClient.interceptors.request.use(
+    async (config) => {
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+  );
+}
+export const isAlreadyLoggedIn = async() => {
+  try{
+    const token = await getAsyncData('authToken');
+    if(token) {
+      router.replace('/(tabs)/Dashboard');
+    }else  {
+      console.warn('Not logged in')
+    }
+  }catch(err) {
+    console.error(err)
+  }
+}
+// initToken();
 // export const getScholars = async () => {
     
 //   try {
@@ -69,12 +99,13 @@ export const signin = async (formData: any) => {
         }
         return res.data;
     }catch(err) {
-
+      console.warn('err => ', err)
     }
 }
 
 export const getUserById = async (userId:any) => {
-    try {
+  try {
+      await initToken();
       const response = await apiClient.get(`${API_URL}/users/${userId}`);
       return response.data;
     } catch (error) {
@@ -97,17 +128,23 @@ export const storeAsyncData = async (key: string, value:any) => {
 export const getAsyncData = async (key: string) => {
     try {
         const value = await AsyncStorage.getItem(key);
-        if (value !== null) {
+        if (value !== null && key != 'authToken')  {
           return JSON.parse(value);
+        }
+        if(key === 'authToken') {
+          return value;
         }
       } catch (e) {
         // error reading value
+        console.error(e)
       }
 }
 
 
 export const yourDonation = async (userId:any) => {
-    try {
+  
+  try {
+      await initToken();
       const response = await apiClient.get(`${API_URL}/yourDonation/${userId}`);
       return response.data;
     } catch (error) {
@@ -117,7 +154,9 @@ export const yourDonation = async (userId:any) => {
   };
 
   export const scholarDetails = async (userId:any) => {
+    
     try {
+      await initToken();
         const response = await apiClient.get(`${API_URL}/scholarDetails/${userId}`);
         return response.data;
       } catch (error) {
@@ -127,7 +166,9 @@ export const yourDonation = async (userId:any) => {
   };
 
   export const socialImpact = async (userId:any) => {
+    
     try {
+      await initToken();
         const response = await apiClient.get(`${API_URL}/socialImpact/${userId}`);
         return response.data;
       } catch (error) {
@@ -141,6 +182,8 @@ export const yourDonation = async (userId:any) => {
 
   export const getScholarDetails = async (scholarId: any) => {
     try {
+      await initToken();
+
       const response = await apiClient.get(`${API_URL}/getScholar/${scholarId}`);
       return response.data;
     } catch (error) {
@@ -161,6 +204,8 @@ export const yourDonation = async (userId:any) => {
   
   export const getGalary = async () => {
     try {
+      await initToken();
+
       const response = await apiClient.get(`${API_URL}/getGallery`);
       return response.data;
     } catch (error) {
@@ -204,6 +249,8 @@ export const yourDonation = async (userId:any) => {
 
 export const JionWithUsForm = async (formData) => {
   try {
+    await initToken();
+
     const response = await apiClient.post(`/joinWithUsForm`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

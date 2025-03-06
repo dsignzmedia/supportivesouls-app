@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity,ScrollView,Modal,Image ,Platform} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity,ScrollView,Modal,Image ,Platform,Animated} from 'react-native';
 import React , { useRef, useState,useCallback,useEffect }from "react";
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { router } from 'expo-router';
@@ -19,7 +19,7 @@ const [modalVisible, setModalVisible] = useState(false);
   // const [selectedImpactId, setSelectedImpactId] = useState(null);
   const [selectedImpact, setSelectedImpact] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const fadeAnim = useRef(new Animated.Value(0.3)).current;
   const secondSheetRef = useRef<BottomSheetModal>(null);
 
   // useEffect(() => {
@@ -57,7 +57,21 @@ const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     init();
-  }, []);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0.3,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+  }, [fadeAnim]);
   
   const formatDate = (dateString) => {
     if (!dateString) return 'Invalid Date'; // Fallback if date is not available
@@ -123,23 +137,27 @@ const [modalVisible, setModalVisible] = useState(false);
       <ScrollView>
               <View style={styles.content}>
       
-              {/* Scholars count */}
-              <Text style={styles.supportText}>
-                You have supported <Text style={styles.highlightText}>{totallyBenifited} Scholars</Text>
-              </Text>
+              {/* Social count */}
+              {loading ? (
+                <Animated.View style={[styles.skeletonText, { opacity: fadeAnim }]} />
+              ) : (
+                <Text style={styles.supportText}>
+                  You have supported <Text style={styles.highlightText}>{totallyBenifited} Scholars</Text>
+                </Text>
+              )}
       
               {/* Skeleton Loader or Scholars List */}
             {loading ? (
               // Skeleton Loader
               Array.from({ length: 5 }).map((_, index) => (
-                <View key={index} style={styles.skeletonCard}>
+                <Animated.View key={index} style={[styles.skeletonCard, { opacity: fadeAnim }]}>
                   <View style={styles.skeletonLine} />
                   <View style={styles.skeletonRow}>
                     <View style={styles.skeletonBox} />
                     <View style={styles.skeletonBox} />
                   </View>
                   <View style={styles.skeletonButton} />
-                </View>
+                </Animated.View>
               ))
             ) : scholarsData.length > 0 ? (
 
@@ -469,5 +487,7 @@ const styles = StyleSheet.create({
       height: 100,
       marginTop: 10,
     },
+    skeletonText: { height: 20, backgroundColor: '#d6d6d6', marginBottom: 10, borderRadius: 5 },
+
 });
 export default SocialImpact

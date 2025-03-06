@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet ,Image,Pressable, Dimensions,KeyboardAvoidingView,Platform,Keyboard,TextInput,Alert } from 'react-native';
-import React, { useState } from 'react';
+import React , { useRef, useState,useCallback, useEffect }from "react";
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { FloatingLabelInput } from "react-native-floating-label-input";
 import { Picker } from '@react-native-picker/picker';
@@ -13,6 +13,9 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import PhoneInput from 'react-native-phone-number-input';   
 import axios from 'axios';
 import { useRouter } from "expo-router";
+import { JionWithUsForm, getAsyncData, isAlreadyLoggedIn} from '@/app/services/service';
+import { useNavigation } from '@react-navigation/native'; 
+
 
 const {width,height} = Dimensions.get('window');
 const Jionprogram = ({children}:any) => {
@@ -42,7 +45,19 @@ const Jionprogram = ({children}:any) => {
     hideDatePicker();
   };
 
+  
+
     // form 
+    const [flashMessage, setFlashMessage] = useState({ type: '', message: '' });
+
+    useEffect(() => {
+      if (flashMessage.message) {
+        setTimeout(() => {
+          setFlashMessage({ type: '', message: '' });
+        }, 2000);
+      }
+    }, [flashMessage]);
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [pan, setPan] = useState('');
@@ -50,45 +65,122 @@ const Jionprogram = ({children}:any) => {
     const [address, setAddress] = useState('');
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
-
+    const [postalcode, setPostalcode] = useState('');
     const [birthday, setBirthday] = useState('');
     const [day, setDay] = useState('');
     const [month, setMonth] = useState('');
     const [year, setYear] = useState('');
     const [gender, setGender] = useState('');
 
-    const handleSubmit = async () => {
-        if (!name || !email || !phone || !address || !city || !state || !selected) {
-        // if (!name || !email || !phone || !pan || !address || !city || !state || !selected) {
-            alert('Please fill in all required fields.');
-            return;
-          }
-        
-          try {
-            const response = await axios.post('https://your-server-url/submit-form.php', {
-              name,
-              email,
-              phone: formattedNumber, // Ensure the number is in international format
-              // pan,
-              // age: selectedDate,
-              // gender,
-              address,
-              city,
-              state,
-              country: selected.label,
-            });
-        
-            if (response.data.success) {
-              alert('Form submitted successfully!');
-            } else {
-              alert('Form submission failed.');
-            }
-          } catch (error) {
-            console.error(error);
-            alert('An error occurred while submitting the form.');
-          }
-    };
+    // date picker
+         const [errors, setErrors] = useState({
+          name: { status: false, message: '' },
+          email: { status: false, message: '' },
+          phone: { status: false, message: '' },
+          address: { status: false, message: '' },
+          city: { status: false, message: '' },
+          state: { status: false, message: '' },
+          selected: { status: false, message: '' },
+          postalcode: { status: false, message: '' },
+        });
 
+        const handleCancel = () => {
+          // Clear form fields
+          resetFormFields();
+          
+          // Redirect to Dashboard
+          router.replace('/(tabs)/Dashboard');
+        };
+
+        
+    const navigation = useNavigation(); 
+            
+            const validateEmail = (email) => {
+              const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+              return emailRegex.test(email);
+            };
+
+    const handleSubmit = async () => {
+              let newErrors = {
+                name: { status: !name },
+                email: { status: !email },
+                phone: { status: !formattedNumber },
+                address: { status: !address },
+                city: { status: !city },
+                state: { status: !state },
+                selected: { status: !selected },
+                postalcode: { status: !postalcode },
+              };
+            
+              setErrors(newErrors);
+            
+              if (Object.values(newErrors).some(error => error.status)) {
+                return;
+              }
+            
+              // Proceed with form submission if no errors
+              try {
+                const formData = { name, email, phone: formattedNumber, address, city, state, country: selected?.label, postal_code: postalcode };
+            
+                console.warn('formData => ', formData);
+                const response = await JionWithUsForm(formData);
+            
+                if (response && response.success) {
+                  setFlashMessage({ type: 'success', message: 'Form submitted successfully!' });
+                
+                  setTimeout(() => {
+                    setFlashMessage({ type: '', message: '' });
+                
+                    // Navigate to Dashboard
+                    // navigation.navigate('(tabs)/Dashboard');
+                    router.replace('/(tabs)/Dashboard');
+                    // Reset form fields
+                    resetFormFields();
+                  }, 2000); // Short delay before redirecting
+                }else {
+                  setFlashMessage({ type: 'error', message: response.message || 'Unexpected response. Please try again.' });
+                }
+              } catch (error) {
+                console.error('Error submitting form:', error);
+                setFlashMessage({ type: 'error', message: `An error occurred. Please try again. ${error.message}` });
+              }
+            };
+            // const handleCancel = () => {
+            //   // Reset the input value
+            //   // Close the bottom sheet
+            //   setName('');
+            //   setEmail('');
+            //   setMobileNumber('');
+            //   setAddress('');
+            //   setCity('');
+            //   setState('');
+            //   setSelected(null);
+            //   setPostalcode('');
+            
+            //   // secondSheetRef.current?.close();
+            // };
+
+            const resetFormFields = () => {
+              setName('');
+              setEmail('');
+              setMobileNumber('');
+              setAddress('');
+              setCity('');
+              setState('');
+              setSelected(null);
+              setPostalcode('');
+              setErrors({
+                name: { status: false, message: '' },
+                email: { status: false, message: '' },
+                phone: { status: false, message: '' },
+                address: { status: false, message: '' },
+                city: { status: false, message: '' },
+                state: { status: false, message: '' },
+                selected: { status: false, message: '' },
+                postalcode: { status: false, message: '' },
+              });
+            };
+            
     // age select funtion
     const router = useRouter();
     const [dayOpen, setDayOpen] = useState(false);
@@ -182,246 +274,309 @@ const Jionprogram = ({children}:any) => {
       style={{ flex: 1 }}>
 
         <ScrollView>
-            <View style={{padding:15,marginBottom:'15%'}}>
 
-            <View>
-                {/* <Text style={styles.formHeader}>
-                    Please fill the below form to join the Guardian Angels Program
-                </Text> */}
-                <Text style={styles.formHeader}>Please fill the below form to join the <Text style={styles.highlightText}>Guardian Angels</Text> Program</Text>
-            </View>
+          
 
-            {/* Name Field */}
-            <FloatingLabelInput
-                label="Name*"
-                value={name}
-                style={styles.inputStyles}
-                containerStyles={styles.containerStyles}
-                labelStyles={styles.labelStyles}
-                onChangeText={value => setName(value)}
-            />
-            {/* Email Field */}
-            <FloatingLabelInput
-                label="Email*"
-                value={email}
-                keyboardType="email-address"
-                style={styles.inputStyles}
-                containerStyles={styles.containerStyles}
-                labelStyles={styles.labelStyles}
-                onChangeText={value => setEmail(value)}
-            />
-            
+           <View style={{padding:15}}>
+           {flashMessage.message && (
+                  <View
+                    style={[
+                      styles.flashMessage,
+                      flashMessage.type === 'success' ? styles.success : styles.error,
+                    ]}
+                  >
+                    <Text style={styles.flashText}>{flashMessage.message}</Text>
+                  </View>
+                )}
+                         
+                                     <View>
+                                         {/* <Text style={styles.formHeader}>
+                                             Please fill the below form to join the Guardian Angels Program
+                                         </Text> */}
+                                         {/* <Text style={styles.formHeader}>Jion With Us </Text> */}
+                                         <Text style={styles.formHeader}>Please fill the below form to join the <Text style={styles.highlightText}>Guardian Angels</Text> Program</Text>
 
-            {/* PAN Field */}
-            {/* <FloatingLabelInput
-                label="PAN"
-                value={pan}
-                style={styles.inputStyles}
-                containerStyles={styles.containerStyles}
-                labelStyles={styles.labelStyles}
-                onChangeText={value => setPan(value)}
-            /> */}
-            {/* Age Section */}
-            {/* <View style={styles.ageContainer}> */}
-                {/* <Text style={styles.agelabel}>Age</Text> */}
-                {/* <View style={styles.row}> */}
-                    {/* Day Dropdown */}
-                    {/* <DropDownPicker
-                    listMode='SCROLLVIEW'
-                    open={dayOpen}
-                    value={selectedDay}
-                    items={days}
-                    setOpen={setDayOpen}
-                    setValue={setSelectedDay}
-                    placeholder="Day"
-                    style={styles.agedropdown}
-                    dropDownContainerStyle={styles.dropdownContainer}
-                    /> */}
+                                     </View>
+                         
+                                     {/* Name Field */}
+                                     <FloatingLabelInput
+                                       label="Name*"
+                                       value={name}
+                                       style={[styles.inputStyles, errors.name.status ? styles.errorInput : null]}
+                                       containerStyles={[styles.containerStyles,errors.email.status && styles.errorInput]}
+                                       labelStyles={styles.labelStyles}
+                                       onChangeText={(value) => {
+                                         setName(value);
+                                         if (errors.name.status) setErrors({ ...errors, name: { status: false, message: '' } });
+                                       }}
+                                     />
+                                     {/* Email Field */}
+                                     {/* <View style={[styles.inputContainer, errors.email.status && styles.errorInput]}> */}
+                                       <FloatingLabelInput
+                                       label="Email*"
+                                       value={email}
+                                       keyboardType="email-address"
+                                       style={styles.inputStyles}
+                                       containerStyles={[styles.containerStyles, errors.email.status ? styles.errorInput : null]}
+                                       labelStyles={styles.labelStyles}
+                                       onChangeText={(value) => {
+                                         setEmail(value);
+           
+                                         if (!validateEmail(value)) {
+                                           setErrors({
+                                             ...errors,
+                                             email: { status: true, message: 'Invalid email format (e.g., example@gmail.com)' },
+                                           });
+                                         } else {
+                                           setErrors({ ...errors, email: { status: false, message: '' } });
+                                         }
+                                       }}
+                                     />
+                                     {/* </View> */}
+           
+                         
+                                     {/* PAN Field */}
+                                     {/* <FloatingLabelInput
+                                         label="PAN"
+                                         value={pan}
+                                         style={styles.inputStyles}
+                                         containerStyles={styles.containerStyles}
+                                         labelStyles={styles.labelStyles}
+                                         onChangeText={value => setPan(value)}
+                                     /> */}
+                                     {/* Age Section */}
+                                     {/* <View style={styles.ageContainer}> */}
+                                         {/* <Text style={styles.agelabel}>Age</Text> */}
+                                         {/* <View style={styles.row}> */}
+                                             {/* Day Dropdown */}
+                                             {/* <DropDownPicker
+                                             listMode='SCROLLVIEW'
+                                             open={dayOpen}
+                                             value={selectedDay}
+                                             items={days}
+                                             setOpen={setDayOpen}
+                                             setValue={setSelectedDay}
+                                             placeholder="Day"
+                                             style={styles.agedropdown}
+                                             dropDownContainerStyle={styles.dropdownContainer}
+                                             /> */}
+                         
+                                             {/* Month Dropdown */}
+                                             {/* <DropDownPicker
+                                             listMode='SCROLLVIEW'
+                                             open={monthOpen}
+                                             value={selectedMonth}
+                                             items={months}
+                                             setOpen={setMonthOpen}
+                                             setValue={setSelectedMonth}
+                                             placeholder="Month"
+                                             style={styles.agedropdown}
+                                             dropDownContainerStyle={styles.dropdownContainer}
+                                             /> */}
+                         
+                                             {/* Year Dropdown */}
+                                             {/* <DropDownPicker
+                                             listMode='SCROLLVIEW'
+                                             open={yearOpen}
+                                             value={selectedYear}
+                                             items={years}
+                                             setOpen={setYearOpen}
+                                             setValue={setSelectedYear}
+                                             placeholder="Year"
+                                             style={styles.agedropdown}
+                                             dropDownContainerStyle={styles.dropdownContainer}
+                                             /> */}
+                                         {/* </View> */}
+                                     {/* </View> */}
+                         
+                                     {/* Age Section */}
+                                         {/* <Text style={styles.agelabel}>Age</Text>
+                         
+                                     <TouchableOpacity onPress={showDatePicker}>
+                                         <TextInput
+                                         style={styles.textInput}
+                                         value={selectedDate} 
+                                         editable={false} 
+                                         pointerEvents="none"
+                                         />
+                                     </TouchableOpacity>
+                         
+                                     <DateTimePickerModal
+                                         isVisible={isDatePickerVisible}
+                                         mode="date"
+                                         onConfirm={handleConfirm}
+                                         onCancel={hideDatePicker}
+                                     /> */}
+                         
+                         
+                                     {/* Gender Section */}
+                                     {/* <View style={styles.section}>
+                                             <Text style={styles.sectionLabel}>Gender</Text>
+                                             <View style={styles.genderContainer}>
+                                                 <TouchableOpacity
+                                                     style={[styles.radioButton, gender === 'Male' && styles.radioSelected]}
+                                                     onPress={() => setGender('Male')}
+                                                 >
+                                                     <View style={styles.radioCircle}>
+                                                         {gender === 'Male' && <View style={styles.radioInnerCircle} />}
+                                                     </View>
+                                                     <Text style={styles.radioText}>Male</Text>
+                                                 </TouchableOpacity>
+                         
+                                                 <TouchableOpacity
+                                                     style={[styles.radioButton, gender === 'Female' && styles.radioSelected]}
+                                                     onPress={() => setGender('Female')}
+                                                 >
+                                                     <View style={styles.radioCircle}>
+                                                         {gender === 'Female' && <View style={styles.radioInnerCircle} />}
+                                                     </View>
+                                                     <Text style={styles.radioText}>Female</Text>
+                                                 </TouchableOpacity>
+                         
+                                               
+                                                 <TouchableOpacity
+                                                     style={[styles.radioButton, gender === 'Others' && styles.radioSelected]}
+                                                     onPress={() => setGender('Others')}
+                                                 >
+                                                     <View style={styles.radioCircle}>
+                                                         {gender === 'Others' && <View style={styles.radioInnerCircle} />}
+                                                     </View>
+                                                     <Text style={styles.radioText}>Others</Text>
+                                                 </TouchableOpacity>
+                                                 
+                                             </View>
+                                         </View> */}
+                                         
+                         
+                                         {/* Mobile Number Field */}
+                                         {/* <FloatingLabelInput
+                                             label="Mobile Number"
+                                             value={mobileNumber}
+                                             keyboardType="phone-pad"
+                                             maxLength={10}
+                                             style={styles.inputStyles}
+                                             containerStyles={styles.containerStyles}
+                                             labelStyles={styles.labelStyles}
+                                             onChangeText={value => setMobileNumber(value)}
+                                         /> */}
+                         
+                                         <View style={[styles.numContainer, errors.phone.status ? styles.errorInput : null]}>
+                                           <PhoneInput
+                                             defaultValue={phone}
+                                             defaultCode="IN"
+                                             layout="first"
+                                             onChangeFormattedText={(text) => {
+                                               setFormattedNumber(text);
+                                               if (errors.phone.status) setErrors({ ...errors, phone: { status: false } });
+                                             }}
+                                             placeholder="Enter your phone number*"
+                                             containerStyle={[
+                                               styles.inputContainer,
+                                               styles.noShadow,
+                                               errors.phone.status ? styles.errorInput : null, // ✅ Apply error border directly to PhoneInput container
+                                             ]}
+                                             textContainerStyle={styles.textContainer}
+                                             textInputStyle={styles.textInputNum}
+                                             flagButtonStyle={styles.flagButton}
+                                             textInputProps={{
+                                               placeholderTextColor: '#AFAFAF',
+                                             }}
+                                           />
+                                         </View>
+           
+           
+                         
+                         
+                                         {/* Address Number Field */}
+                                         <FloatingLabelInput
+                                           label="Address"
+                                           value={address}
+                                           multiline
+                                           numberOfLines={4}
+                                           style={[styles.inputStyles, { height: 100 }, errors.address.status ? styles.errorInput : null]}
+                                           containerStyles={[styles.containerStyles, errors.address.status && styles.errorInput]}
+                                           labelStyles={styles.labelStyles}
+                                           onChangeText={(value) => {
+                                             setAddress(value);
+                                             if (errors.address.status) setErrors({ ...errors, address: { status: false } });
+                                           }}
+                                         />
+           
+                                         {/* City Field */}
+                                         <FloatingLabelInput 
+                                           label="City"
+                                           value={city}
+                                           style={[styles.inputStyles, errors.city.status ? styles.errorInput : null]}
+                                           containerStyles={[styles.containerStyles, errors.city.status && styles.errorInput]}
+                                           labelStyles={styles.labelStyles}
+                                           onChangeText={(value) => {
+                                             setCity(value);
+                                             if (errors.city.status) setErrors({ ...errors, city: { status: false } });
+                                           }}
+                                         />
+           
+                         
+                                         {/* State Field */}
+                                         <FloatingLabelInput
+                                           label="State"
+                                           value={state}
+                                           style={[styles.inputStyles, errors.state.status ? styles.errorInput : null]}
+                                           containerStyles={[styles.containerStyles, errors.state.status && styles.errorInput]}
+                                           labelStyles={styles.labelStyles}
+                                           onChangeText={(value) => {
+                                             setState(value);
+                                             if (errors.state.status) setErrors({ ...errors, state: { status: false } });
+                                           }}
+                                         />
+           
+                                        
+                                         {/* postal Code */}
+                                         <FloatingLabelInput
+                                           label="Postal Code"
+                                           value={postalcode}
+                                           style={[styles.inputStyles, errors.postalcode.status ? styles.errorInput : null]}
+                                           containerStyles={[styles.containerStyles, errors.postalcode.status && styles.errorInput]}
+                                           labelStyles={styles.labelStyles}
+                                           onChangeText={(value) => {
+                                             setPostalcode(value);
+                                             if (errors.postalcode.status) setErrors({ ...errors, postalcode: { status: false } });
+                                           }}
+                                         />
 
-                    {/* Month Dropdown */}
-                    {/* <DropDownPicker
-                    listMode='SCROLLVIEW'
-                    open={monthOpen}
-                    value={selectedMonth}
-                    items={months}
-                    setOpen={setMonthOpen}
-                    setValue={setSelectedMonth}
-                    placeholder="Month"
-                    style={styles.agedropdown}
-                    dropDownContainerStyle={styles.dropdownContainer}
-                    /> */}
-
-                    {/* Year Dropdown */}
-                    {/* <DropDownPicker
-                    listMode='SCROLLVIEW'
-                    open={yearOpen}
-                    value={selectedYear}
-                    items={years}
-                    setOpen={setYearOpen}
-                    setValue={setSelectedYear}
-                    placeholder="Year"
-                    style={styles.agedropdown}
-                    dropDownContainerStyle={styles.dropdownContainer}
-                    /> */}
-                {/* </View> */}
-            {/* </View> */}
-
-            {/* Age Section */}
-                {/* <Text style={styles.agelabel}>Age</Text> */}
-
-            {/* <TouchableOpacity onPress={showDatePicker}>
-                <TextInput
-                style={styles.textInput}
-                value={selectedDate} 
-                editable={false} 
-                pointerEvents="none"
-                />
-            </TouchableOpacity>
-
-            <DateTimePickerModal
-                isVisible={isDatePickerVisible}
-                mode="date"
-                onConfirm={handleConfirm}
-                onCancel={hideDatePicker}
-            /> */}
-
-
-            {/* Gender Section */}
-            {/* <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Gender</Text>
-                    <View style={styles.genderContainer}>
-                        
-                        <TouchableOpacity
-                            style={[styles.radioButton, gender === 'Male' && styles.radioSelected]}
-                            onPress={() => setGender('Male')}
-                        >
-                            <View style={styles.radioCircle}>
-                                {gender === 'Male' && <View style={styles.radioInnerCircle} />}
-                            </View>
-                            <Text style={styles.radioText}>Male</Text>
-                        </TouchableOpacity>
-
-                        
-                        <TouchableOpacity
-                            style={[styles.radioButton, gender === 'Female' && styles.radioSelected]}
-                            onPress={() => setGender('Female')}
-                        >
-                            <View style={styles.radioCircle}>
-                                {gender === 'Female' && <View style={styles.radioInnerCircle} />}
-                            </View>
-                            <Text style={styles.radioText}>Female</Text>
-                        </TouchableOpacity>
-
-                        
-                        <TouchableOpacity
-                            style={[styles.radioButton, gender === 'Others' && styles.radioSelected]}
-                            onPress={() => setGender('Others')}
-                        >
-                            <View style={styles.radioCircle}>
-                                {gender === 'Others' && <View style={styles.radioInnerCircle} />}
-                            </View>
-                            <Text style={styles.radioText}>Others</Text>
-                        </TouchableOpacity>
-                        
-                    </View>
-                </View> */}
-                
-
-                {/* Mobile Number Field */}
-                {/* <FloatingLabelInput
-                    label="Mobile Number"
-                    value={mobileNumber}
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    style={styles.inputStyles}
-                    containerStyles={styles.containerStyles}
-                    labelStyles={styles.labelStyles}
-                    onChangeText={value => setMobileNumber(value)}
-                /> */}
-
-                <View style={styles.numContainer}>
-                    <PhoneInput
-                        defaultValue={phone}
-                        defaultCode="IN" 
-                        layout="first" 
-                        onChangeText={(text) => setMobileNumber(text)} 
-                        onChangeFormattedText={(text) => setFormattedNumber(text)} 
-                        onChangeCountry={(country) => setCountryCode(country.callingCode[0])} 
-                        placeholder="Enter your phone number*"
-                        containerStyle={[styles.inputContainer, styles.noShadow]}
-                        textContainerStyle={styles.textContainer}
-                        textInputStyle={styles.textInputNum}
-                        flagButtonStyle={styles.flagButton}
-                        textInputProps={{
-                            placeholderTextColor: '#AFAFAF',
-                          }}
-                          withDarkTheme={false} 
-                          withShadow={false} 
-                    />
-                </View>
-
-
-                {/* Address Number Field */}
-                <FloatingLabelInput
-                    label="Address"
-                    value={address}
-                    multiline={true} // Enable multiline
-                    numberOfLines={4} // Adjust height
-                    style={[styles.inputStyles, { height: 100 }]} // Add height to the input
-                    containerStyles={styles.containerStyles}
-                    labelStyles={styles.labelStyles}
-                    onChangeText={value => setAddress(value)}
-                />
-                {/* City Field */}
-                <FloatingLabelInput
-                    label="City"
-                    value={city}
-                    style={styles.inputStyles}
-                    containerStyles={styles.containerStyles}
-                    labelStyles={styles.labelStyles}
-                    onChangeText={value => setCity(value)}
-                />
-
-                {/* State Field */}
-                <FloatingLabelInput
-                    label="State"
-                    value={state}
-                    style={styles.inputStyles}
-                    containerStyles={styles.containerStyles}
-                    labelStyles={styles.labelStyles}
-                    onChangeText={value => setState(value)}
-                />
-               
-
-                <View>
-                    <View style={styles.countryContainer}>
-                    {!!selected && (
-                        <Text>
-                        {/* Selected: label = {selected.label}, value = {selected.value} */}
-                        </Text>
-                    )}
-                    <Dropdown
-                        style={styles.dropdown}
-                        containerStyle={{
-                            maxHeight: Dimensions.get('window').height * 0.4, // Limit dropdown height to 40% of screen height
-                          }}
-                        data={data}
-                        labelField="label"
-                        valueField="value"
-                        placeholder="Select Country"
-                        value={selected?.value}
-                        onChange={(item) => setSelected(item)}
-                    />
-                    </View>
-                </View> 
-            </View>
+                                         
+<View
+                                           style={[
+                                             styles.countryContainer,
+                                             errors.selected.status ? styles.errorInput : null,
+                                           ]}
+                                         >
+                                           <Dropdown
+                                             style={[styles.dropdown, errors.selected.status && styles.errorInput]}
+                                             containerStyle={{
+                                               maxHeight: Dimensions.get('window').height * 0.4,
+                                             }}
+                                             data={data}
+                                             labelField="label"
+                                             valueField="value"
+                                             placeholder="Select Country"
+                                             value={selected?.value}
+                                             onChange={(item) => {
+                                               setSelected(item);
+                                               if (errors.selected.status) {
+                                                 setErrors({ ...errors, selected: { status: false } });
+                                               }
+                                             }}
+                                           />
+                                         </View>
+           
+                                     </View>
             
                 
 
         </ScrollView>
         {/* Submit Button */}
         <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.cancelButton} onPress={() => router.replace('/(tabs)/Dashboard')}>
+                    <TouchableOpacity style={styles.cancelButton}  onPress={handleCancel}>
                         <Text style={styles.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
@@ -745,6 +900,35 @@ const styles = StyleSheet.create({
         borderWidth:1,
         borderColor:'#E0E0E0',
         zIndex:99,
+      },
+      flashMessage: {
+        position: 'absolute',
+        top: 50, // Position below the header
+        left: 20,
+        right: 20,
+        zIndex: 1000,
+        padding: 15,
+        borderRadius: 10,
+      },
+      success: {
+        backgroundColor: '#85e085',
+      },
+      error: {
+        backgroundColor: '#ff6666',
+      },
+      flashText: {
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
+      },
+      errorInput: {
+        // borderColor: 'red',
+        borderColor :'#DC143C',
+      },
+      errorText: {
+        color: 'orange', // Orange text for error message
+        fontSize: 12,
+        marginLeft: 5,
       },
 });
 export default Jionprogram

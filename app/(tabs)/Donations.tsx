@@ -1,14 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform,Image } from 'react-native';
+import React, { useEffect, useState ,useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform,Image ,Animated,Linking, Alert} from 'react-native';
 import HeadersImage from '@/components/Admin/HeadersImage';
 import { FontAwesome } from '@expo/vector-icons'; 
 import { router } from "expo-router";
 import { getAsyncData, yourDonation } from '../services/service';
+import CustomBottomsheetModel from "@/components/common/CustomBottomsheetModel";
+import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 
 const Donations = ({ children }: any) => {
   const [yourTotalDonation , setYourTotalDonation] = useState('');
   const [paymentDates,setPaymentDates] =useState('');
+  const [loading, setLoading] = useState(true); 
+  const fadeAnim = useRef(new Animated.Value(0.3)).current;
+  const secondSheetRef = useRef<BottomSheetModal>(null);
+  
+  const handleOpenDetails = () => {
+    secondSheetRef.current?.present();
+  };
+
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0.3, duration: 500, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
 
   const yourDonationInit = async () => {
     const data = await getAsyncData('userDetails')
@@ -34,10 +54,7 @@ const Donations = ({ children }: any) => {
         setPaymentDates(formattedDates);
 
     }
-    else{
-      console.log('total is empty')
-    }
-    
+    setLoading(false);
   };
   
 
@@ -48,7 +65,17 @@ useEffect(() => {
     router.push('../login');
   }
 
+  // Function to open UPI apps with deep linking
+  const openPaymentApp = (upiId: string, appPackage: string) => {
+    const url = `upi://pay?pa=${upiId}&pn=Supportive Souls&cu=INR`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert("Error", `Please install ${appPackage} to continue`);
+    });
+  };
+
   return (
+        <BottomSheetModalProvider>
+    
     <View style={styles.container}>
 
       <HeadersImage>
@@ -71,7 +98,12 @@ useEffect(() => {
                 />            
               </View>
               <View style={styles.textContainer}>
-                <Text style={styles.amountText}>₹ {yourTotalDonation}</Text>
+                {/* <Text style={styles.amountText}>₹ {yourTotalDonation  || 'N/A'}</Text> */}
+                {loading ? (
+                  <Animated.View style={[styles.skeletonBox, { opacity: fadeAnim }]} />
+                ) : (
+                  <Text style={styles.amountText}>₹ {yourTotalDonation || 'N/A'}</Text>
+                )}
                 <Text style={styles.labelText}>Your Donation</Text>
               </View>
             </View>
@@ -88,7 +120,12 @@ useEffect(() => {
                 />             
                 </View>
               <View style={styles.textContainer}>
-                <Text style={styles.dateText}>{paymentDates}</Text>
+                {/* <Text style={styles.dateText}>{paymentDates  || 'N/A'}</Text> */}
+                {loading ? (
+                  <Animated.View style={[styles.skeletonBox, { opacity: fadeAnim }]} />
+                ) : (
+                  <Text style={styles.dateText}>{paymentDates || 'N/A'}</Text>
+                )}
                 <Text style={styles.labelText}>Donation Date</Text>
               </View>
             </View>
@@ -105,12 +142,100 @@ useEffect(() => {
           <Text style={styles.impactText}>To make an Social Impact</Text>
 
           {/* Donate More Button onPress={openTheLogin}*/}
-          <TouchableOpacity style={styles.donateButton}>
+          <TouchableOpacity style={styles.donateButton} activeOpacity={0.8} onPress={handleOpenDetails}>
             <Text style={styles.donateButtonText}>Donate More</Text>
           </TouchableOpacity>
         </View>
       </View>
+      
     </View>
+    {/* Bottom Sheet */}
+<CustomBottomsheetModel
+  bottomSheetRef={secondSheetRef}
+  snapPoints={['75%', '100%']}
+  initialIndex={0}
+  showHandleIndicator={true}
+>
+  <View style={styles.bottomSheetContainer}>
+
+    {/* Heading & Description */}
+    <View style={{marginBottom: 20}}>
+      <Text style={styles.heading}>Donate</Text>
+      <Text style={styles.content}>
+        We are committed towards making a positive impact in the lives of those in need. Our programs and services focus on 
+        education, fight-hunger, and community development, and we rely on the generosity of donors like you to continue 
+        our work. We thank you for considering a donation to our charity trust and for helping us to create a brighter future for all.
+      </Text>
+    </View>
+
+    {/* Donation Details */}
+    <View style={styles.detailsContainer}>
+      <View style={{borderWidth:1, padding:10,borderRadius:10, borderColor:'#E0E0E0',width:'100%'}}>
+    
+        <View style={styles.detailRow}>
+          {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+          <Text style={styles.label}>Account Number:</Text>
+          <Text style={styles.value}>1169120030000442</Text>
+        </View>
+
+        <View style={styles.detailRow}>
+          {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+          <Text style={styles.label}>Account Name:</Text>
+          <Text style={styles.value}>SUPPORTIVE SOULS CHARITABLE TRUST</Text>
+        </View>
+        
+        <View style={styles.detailRow}>
+          {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+          <Text style={styles.label}>IFSC:</Text>
+          <Text style={styles.value}>UJVN0001169</Text>
+        </View>
+
+        <View style={styles.detailRow}>
+          {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+          <Text style={styles.label}>Account Type:</Text>
+          <Text style={styles.value}>Current Account</Text>
+        </View>
+
+        <View style={styles.detailRow}>
+          {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
+          <Text style={styles.label}>UPI ID:</Text>
+          <Text style={[styles.value, styles.upiId]}>ujjbb8398972371@ujjivan</Text>
+        </View>
+      </View>
+
+      {/* QR Code
+      <Image 
+        source={require('../../assets/qr-code.png')} 
+        style={styles.qrCode} 
+        resizeMode="contain"
+      /> */}
+    </View>
+
+    {/* Payment Icons */}
+    <View style={styles.paymentContainer}>
+      <Text style={styles.heading}>Donate via UPI</Text>
+      <View style={styles.iconContainer}>
+
+        <TouchableOpacity onPress={() => openPaymentApp('ujjbb8398972371@upi', 'PhonePe')}>
+          <Image source={require('../../assets/images/amount-icon/google-pay.png')} style={styles.icon} />
+        </TouchableOpacity>
+
+        
+        <TouchableOpacity onPress={() => openPaymentApp('ujjbb8398972371@paytm', 'Paytm')}>
+          <Image source={require('../../assets/images/amount-icon/phone-pe.png')} style={styles.icon} />
+        </TouchableOpacity>
+
+      
+        <TouchableOpacity onPress={() => openPaymentApp('ujjbb8398972371@upi', 'Google Pay')}>
+          <Image source={require('../../assets/images/amount-icon/paytm-icons.png')} style={styles.icon} />
+        </TouchableOpacity>
+
+      </View>
+    </View>
+  </View>
+</CustomBottomsheetModel>
+
+    </BottomSheetModalProvider>
   );
 };
 
@@ -180,6 +305,8 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginRight: 6,
+    // display:'flex',
+    flexDirection:'row',
   },
   iconImage: {
     width: 42,
@@ -241,6 +368,65 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontFamily:'PP_SemiBold',
+  },
+  skeletonBox: { width: 80, height: 20, backgroundColor: '#ccc', borderRadius: 4, marginBottom: 4 },
+  bottomSheetContainer:{
+    padding: 16,
+  },
+  heading:{
+    fontSize: 18,
+    fontFamily:'PP_Bold',
+    color: '#000000',
+    marginBottom: 16,
+  },
+  content:{
+    fontSize: 14,
+    fontFamily:'PP_Regular',
+    color: '#333',
+    textAlign: 'justify',
+    lineHeight: 20,
+  },
+  detailsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    // marginTop: 10,
+  },
+  detailRow: {
+    // flexDirection: 'row',
+    // alignItems: 'center',
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    // marginLeft: 5,
+    color: '#333',
+    marginBottom: 5,
+  },
+  value: {
+    fontSize: 14,
+    marginLeft: 5,
+    color: '#666',
+  },
+  upiId: {
+    color: 'green',
+  },
+  qrCode: {
+    width: 100,
+    height: 100,
+    marginLeft: 20,
+  },
+  paymentContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+
+  icon: {
+    width: 50,
+    height: 50,
+    marginHorizontal: 10,
+    resizeMode: 'contain',
   },
 });
 
