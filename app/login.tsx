@@ -78,7 +78,7 @@ export default function LoginPage() {
         // description: "Welcome back!",
         type: "success",
         icon: "success",
-        duration: 2000,
+        duration: 250,
         backgroundColor: "#4CAF50", 
         color: "#FFFFFF", 
         textStyle: { fontSize: 16, fontWeight: "bold" },
@@ -89,7 +89,7 @@ export default function LoginPage() {
         router.dismissAll();
         router.replace('/(tabs)/Dashboard');
         console.log('Navigation successful to Dashboard');
-      }, 2000); 
+      }, 150); 
 
         // Navigate to Dashboard
         // router.replace('/(tabs)/Dashboard');
@@ -116,17 +116,7 @@ export default function LoginPage() {
   return (
     <View style={styles.container}>
                   <FlashMessage position="center" />
-            {/* {flashMessage.message && (
-              <View
-                style={[
-                  styles.flashMessage,
-                  flashMessage.type === 'success' ? styles.success : styles.error,
-                ]}
-              >
-                <Text style={styles.flashText}>{flashMessage.message}</Text>
-              </View>
-            )} */}
-
+            
       <View style={styles.logoContainer}>
         <Image
           source={require('../assets/images/dashboard/supportive_souls_logo.png')}

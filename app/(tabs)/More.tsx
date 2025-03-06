@@ -13,33 +13,7 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
-const SectionsData = [
-  {
-    index: 2, 
-    title: 'About Us',
-    content: 'This is the About Us content. Here you can describe your organization or mission.',
-  },
-  {
-    index: 3,
-    title: 'Focus',
-    content: 'This is the Focus content. Highlight the areas you prioritize or aim to achieve.',
-  },
-  {
-    index: 4,
-    title: 'Scholarship',
-    content: 'This is the Scholarship content. Provide details about scholarships and eligibility.',
-  },
-  {
-    index: 5,
-    title: 'Photo Gallery',
-    content: 'This is the Photo Gallery content. Showcase photos related to your initiatives.',
-  },
-  {
-    index: 6,
-    title: 'Contact Us',
-    content: 'This is the Contact Us content. Provide contact details and support information.',
-  },
-];
+
 
 const ProfileData = [
   {
@@ -77,19 +51,7 @@ const handleLinkedInPress = (name:any) => {
 
 
 const router = useRouter();
-// const openProfile = async () => {
-//     const userDetails = await getUserById(17); //NOTE: need to get user id from async storage when user logged in
-//     console.warn('userDetails => ', userDetails)
-//     // router.push('/userProfile');
-//     if (userDetails?.user) {
-//       router.push({
-//         pathname: '/userProfile',
-//         params: { userDetails: userDetails.user }, 
-//       });
-//     } else {
-//       console.error('Failed to fetch user details!');
-//     }
-// }
+
 const openProfile = async () => {
   const data = await getAsyncData('userDetails')
   if(data){
@@ -157,23 +119,6 @@ const More = () => {
     setExpandedIndex((prev) => (prev === index ? null : index));
   };
 
-//   const logout = async () => {
-//     try {
-//         // Remove the token from AsyncStorage
-//         await AsyncStorage.removeItem('authToken');
-
-//         // Optionally display a confirmation
-//         Alert.alert('Logout', 'You have been logged out successfully!');
-
-//         // Navigate to the login page
-//         // navigation.replace('login'); // Replace ensures no back navigation to this screen
-//     } catch (error) {
-//         console.error('Error during logout:', error);
-//     }
-// };
-
-    
-
   return (
     
     <View style={styles.container}>
@@ -208,19 +153,7 @@ const More = () => {
           {/* Accordions for Supportive Souls and Scholar Details */}
           <View>
           <Text  style={styles.sectionHeader}>account</Text>
-            {/* {[...ProfileData].map((item, index) => (
-              <TouchableOpacity onPress={openProfile}>
-              <AccordionItem
-                key={index}
-                title={item.title}
-                content={item.content}
-                expanded={expandedIndex === item.index}
-                onPress={() => handleToggle(item.index)}
-                styleType="profile" 
-              />
-              </TouchableOpacity>
-            ))} */}
-
+            
             <TouchableOpacity onPress={openProfile}>
                 <View style={{borderWidth:1,padding:15,borderRadius:8,borderColor:'#E0E0E0',flexDirection:'row',justifyContent:'space-between'}}>
                   <View style={{flexDirection:'row',}}>
@@ -239,18 +172,7 @@ const More = () => {
 
 
             <Text  style={styles.sectionHeader}>Supportive souls</Text>
-            {/* <View style={styles.sectionContent}>
-            {[...SectionsData].map((item, index) => (
-              <AccordionItem
-                key={index}
-                title={item.title}
-                content={item.content}
-                expanded={expandedIndex === item.index}
-                onPress={() => handleToggle(item.index)}
-                styleType="supportive" // Separate style for Supportive Souls
-              />
-            ))}
-            </View> */}
+            
             <TouchableOpacity onPress={openAboutUs}>
                 <View style={styles.supportive_content}>
                   <View style={{flexDirection:'row',}}>
@@ -265,7 +187,6 @@ const More = () => {
             <TouchableOpacity onPress={openFocus}>
             <View style={styles.supportive_content}>
                 <View style={{flexDirection:'row',}}>
-                    {/* <AntDesign name="exclamationcircleo" size={20} color="black" /> */}
                     <MaterialIcons name="center-focus-weak" size={20} color="black" />
                     <Text style={{fontSize:15,marginLeft:10,}}>Focus</Text>
                   </View>
@@ -321,10 +242,6 @@ const More = () => {
             <TouchableOpacity onPress={handleLinkedInPress}>
               <Image style={styles.socialIcon} source={require('../../assets/images/dashboard/linkedin_icon.png')}/>
             </TouchableOpacity>
-
-            {/* <TouchableOpacity onPress={() => console.log('Facebook clicked')}>
-              <Image style={styles.socialIcon} source={require('../../assets/images/dashboard/facebook_icon.png')}/>
-            </TouchableOpacity> */}
 
             </View>
         </View>

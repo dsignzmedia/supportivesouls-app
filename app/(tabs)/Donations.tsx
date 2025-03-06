@@ -98,7 +98,6 @@ useEffect(() => {
                 />            
               </View>
               <View style={styles.textContainer}>
-                {/* <Text style={styles.amountText}>₹ {yourTotalDonation  || 'N/A'}</Text> */}
                 {loading ? (
                   <Animated.View style={[styles.skeletonBox, { opacity: fadeAnim }]} />
                 ) : (
@@ -120,7 +119,6 @@ useEffect(() => {
                 />             
                 </View>
               <View style={styles.textContainer}>
-                {/* <Text style={styles.dateText}>{paymentDates  || 'N/A'}</Text> */}
                 {loading ? (
                   <Animated.View style={[styles.skeletonBox, { opacity: fadeAnim }]} />
                 ) : (
@@ -141,7 +139,6 @@ useEffect(() => {
         <View>
           <Text style={styles.impactText}>To make an Social Impact</Text>
 
-          {/* Donate More Button onPress={openTheLogin}*/}
           <TouchableOpacity style={styles.donateButton} activeOpacity={0.8} onPress={handleOpenDetails}>
             <Text style={styles.donateButtonText}>Donate More</Text>
           </TouchableOpacity>
@@ -179,36 +176,25 @@ useEffect(() => {
         </View>
 
         <View style={styles.detailRow}>
-          {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
           <Text style={styles.label}>Account Name:</Text>
           <Text style={styles.value}>SUPPORTIVE SOULS CHARITABLE TRUST</Text>
         </View>
         
         <View style={styles.detailRow}>
-          {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
           <Text style={styles.label}>IFSC:</Text>
           <Text style={styles.value}>UJVN0001169</Text>
         </View>
 
         <View style={styles.detailRow}>
-          {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
           <Text style={styles.label}>Account Type:</Text>
           <Text style={styles.value}>Current Account</Text>
         </View>
 
         <View style={styles.detailRow}>
-          {/* <FontAwesome name="check-circle" size={16} color="green" /> */}
           <Text style={styles.label}>UPI ID:</Text>
           <Text style={[styles.value, styles.upiId]}>ujjbb8398972371@ujjivan</Text>
         </View>
       </View>
-
-      {/* QR Code
-      <Image 
-        source={require('../../assets/qr-code.png')} 
-        style={styles.qrCode} 
-        resizeMode="contain"
-      /> */}
     </View>
 
     {/* Payment Icons */}

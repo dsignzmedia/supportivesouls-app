@@ -44,30 +44,6 @@ export default  function LoadingPage() {
       }
     }), [];
 
-    // useEffect(() => {
-    //   const checkLogin = async () => {
-    //     try {
-    //       await isAlreadyLoggedIn();
-    //     } catch (err) {
-    //       console.error(err);
-    //     } finally {
-    //       setIsLoaded(true);
-    //     }
-    //   };
-  
-    //   checkLogin();
-    // }, []); // Add dependencies properly
-
-    
-  // const openJoinWithUs = () => {
-  //   setModalVisible(true);
-  // };
- 
-  // const closeJoinWithUs = () => {
-  //   setModalVisible(false);
-  // };
-
-  
 
     // form 
     const [flashMessage, setFlashMessage] = useState({ type: '', message: '' });
@@ -548,7 +524,7 @@ export default  function LoadingPage() {
                                   containerStyle={[
                                     styles.inputContainer,
                                     styles.noShadow,
-                                    errors.phone.status ? styles.errorInput : null, // ✅ Apply error border directly to PhoneInput container
+                                    errors.phone.status ? styles.errorInput : null,
                                   ]}
                                   textContainerStyle={styles.textContainer}
                                   textInputStyle={styles.textInputNum}
