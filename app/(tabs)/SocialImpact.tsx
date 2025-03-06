@@ -22,24 +22,6 @@ const [modalVisible, setModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0.3)).current;
   const secondSheetRef = useRef<BottomSheetModal>(null);
 
-  // useEffect(() => {
-  //   const init = async () => {
-  //     const user = await getAsyncData('userDetails'); // Fetch user details from storage
-  //     const data = await socialImpact(user.id); // Fetch social impact data
-  
-  //     if (data.success && data.socialImpact.length) {
-  //       console.log('Fetched Data:', data.socialImpact);
-  //       setsocialImpact(data.socialImpact); // Store fetched data
-  //     } else {
-  //       console.log('No social impact data available.');
-  //     }
-  //   };
-  
-  //   init();
-  // }, []);
-
-  
-
   const init = async () => {
     const user = await getAsyncData('userDetails');
     const data = await socialImpact(user.id);
@@ -74,56 +56,22 @@ const [modalVisible, setModalVisible] = useState(false);
   }, [fadeAnim]);
   
   const formatDate = (dateString) => {
-    if (!dateString) return 'Invalid Date'; // Fallback if date is not available
-    const date = new Date(dateString.replace(' ', 'T')); // Ensure proper parsing
-    if (isNaN(date)) return 'Invalid Date'; // Handle invalid date formats
+    if (!dateString) return 'Invalid Date'; 
+    const date = new Date(dateString.replace(' ', 'T')); 
+    if (isNaN(date)) return 'Invalid Date'; 
     return new Intl.DateTimeFormat('en-GB', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
-    }).format(date); // Format as "20 Apr 2024"
+    }).format(date); 
   };
 
-    // const bottomSheetRef = useRef<BottomSheetModal>(null);
-
-    // const handlePresentModalPress = useCallback((impact) => {
-    //   setSelectedImpact(impact);
-    //   secondSheetRef.current?.present();
-    //   console.log("Bottom sheet opened");
-    // }, []);
-    // const handlePresentModalPress = useCallback((impact) => {
-    //   setSelectedImpact(impact); 
-    //   secondSheetRef.current?.present();
-    // }, []);
-
+    
     const handleOpenDetails = (impact: any) => {
       setSelectedImpact(impact);
       secondSheetRef.current?.present();
     };
   
-    // const handleDismiss = useCallback(() => {
-    //   secondSheetRef.current?.close();
-    //   console.log("Dismiss button pressed");
-    // }, []);
- 
-
-  // useEffect(() => {
-  //   const init = async () => {
-  //     const user = await getAsyncData('userDetails');
-  //     const data = await socialImpact(user.id);
-  
-  //     if (data.success && data.socialImpact.length) {
-  //       console.log('Fetched Social Impact Data:', data.socialImpact);
-  //       setsocialImpact(data.socialImpact);
-  //       setTotallyBenifited(data.socialImpact.length);
-  //     }
-  //   };
-  
-  //   init();
-  // }, []);
-
-  
-
   return (
     <BottomSheetModalProvider>
 
@@ -236,13 +184,6 @@ const [modalVisible, setModalVisible] = useState(false);
                         <Text style={styles.name}>{selectedImpact.details || 'N/A'}</Text>
                       </View>
 
-
-                      {/* <Text style={styles.bottomTextBox}>
-                        Amount Spent: ₹ {selectedImpact.amount_spent || 'N/A'}
-                      </Text>
-                      <Text style={styles.bottomTextBox}>
-                        Details: {selectedImpact.details || 'N/A'}
-                      </Text> */}
                     </View>
                   ) : (
                     <Text style={styles.noDataText}>No Impact Details available.</Text>

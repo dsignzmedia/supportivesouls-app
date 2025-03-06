@@ -52,19 +52,6 @@ const Scholarship = () => {
     });
 
 
-    // const scrollToTop = () => {
-    //     if (flatListRef.current) {
-    //         flatListRef.current.scrollToOffset({ offset: 0, animated: true });
-    //     } else {
-    //         console.warn('FlatList ref is undefined or not working');
-    //     }
-    // };
-    
-    // const handleScroll = (event) => {
-    //     const contentOffsetY = event.nativeEvent.contentOffset.y;
-    //     setIsScrollVisible(contentOffsetY > 200);
-    // };
-
     // Function to filter data
     const handleSearch = (query: string) => {
         setSearchQuery(query);
@@ -80,10 +67,6 @@ const Scholarship = () => {
         }
     };
 
-    // const handleScroll = (event:any) => {
-    //     const contentOffsetY = event.nativeEvent.contentOffset.y;
-    //     setIsScrollVisible(contentOffsetY > 200);
-    // };
     const scrollToTop = () => {
         if (flatListRef.current) {
             setTimeout(() => {
@@ -118,36 +101,6 @@ const Scholarship = () => {
                 </View>
             </HeadersImage>
 
-            {/* <ScrollView
-                contentContainerStyle={{ flexGrow: 1, margin: 20 }}
-                ref={scrollViewRef}
-                horizontal={false}
-                onScroll={handleScroll}
-                scrollEventThrottle={16} // Throttle the scroll event for better performance
-            >
-                <View style={styles.tableHeader}>
-                    <Text style={styles.headerText}>S.NO</Text>
-                    <Text style={styles.headerText}>CANDIDATE NAME</Text>
-                    <Text style={styles.headerText}>INSTITUTION</Text>
-                    <Text style={styles.headerText}>COURSE</Text>
-                    <Text style={styles.headerText}>AMOUNT PAID</Text>
-                </View>
-
-                <FlatList
-                    data={allScholars}
-                    extraData={allScholars}
-                    keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
-                    renderItem={({ item, index }) => (
-                        <View style={styles.tableRow} key={item.id || index}>
-                            <Text style={styles.cell}>{index + 1}</Text>
-                            <Text style={styles.cell}>{item.name}</Text>
-                            <Text style={styles.cell}>{item.college}</Text>
-                            <Text style={styles.cell}>{item.course}</Text>
-                            <Text style={styles.cell}>{item.amount_sanctioned}</Text>
-                        </View>
-                    )}
-                />
-            </ScrollView> */}
             {/* Scholars count */}
             <Text style={styles.supportText}>
             Scholarships awarded{' '}
@@ -165,9 +118,6 @@ const Scholarship = () => {
                     value={searchQuery}
                     onChangeText={handleSearch} // Update the state when typing
                 />
-                {/* <TouchableOpacity style={styles.searchButton} onPress={() => handleSearch(searchQuery)}>
-                    <FontAwesome5 name="search" size={20} color="#fff" />
-                </TouchableOpacity> */}
             </View>
 
 

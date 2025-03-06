@@ -12,8 +12,8 @@ const UserProfile = () => {
   useEffect(() => {
     if (userDetailsParam) {
       try {
-        const parsedDetails = JSON.parse(userDetailsParam); // Decode the JSON string
-        setUserDetails(parsedDetails); // Set the state with parsed user details
+        const parsedDetails = JSON.parse(userDetailsParam); 
+        setUserDetails(parsedDetails); 
       } catch (error) {
         console.error('Failed to parse user details:', error);
       }
@@ -53,13 +53,7 @@ const UserProfile = () => {
                 <Text style={styles.title}>Personal info</Text>
                 
                 <View style={styles.infoRow}>
-                    {/* <Image 
-                    source={{ uri: 'https://via.placeholder.com/50' }} // Replace with a dynamic image URL or local asset
-                    style={styles.profileImage} 
-                    /> */}
-                    {/* <TouchableOpacity>
-                    <Text style={styles.editButton}>Edit</Text>
-                    </TouchableOpacity> */}
+                    
                 </View>
 
                 <View style={styles.infoItem}>

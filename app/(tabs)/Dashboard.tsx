@@ -84,31 +84,6 @@ const Dashboard = ({children}:any) => {
     }
   }
 
-  
-//   useEffect(() => {
-//     const getScholors = async () => {
-//       try {
-//         const response = await getScholars();
-//         const parsedResponse = JSON.parse(response);
-// console.log("parsedResponse" , parsedResponse);
-
-
-//         // The response is already a JavaScript object, no need to parse it again
-//         console.log('Total Donation:', response.total_donation);
-        
-//         if (response && response.total_donation !== undefined) {
-//           setYourDonation(response.total_donation);
-//         } else {
-//           console.error('Error: Donation data is missing or invalid.');
-//         }
-//       } catch (error: any) {
-//         console.error('Error fetching team details:', error.message);
-//       }
-//     };
-    
-//     getScholors();
-//   }, []);
-  
 const getGreeting = () => {
   const currentHour = new Date().getHours();
   if (currentHour < 12) {
@@ -239,7 +214,7 @@ useEffect(() => {
           ) : (
             <View>
               {/* Content for 'Need your Time' */}
-              {/* Path to Passion */}
+
             <AccordionItem
               title="Path to Passion"
               expanded={expandedIndexes.includes(3)}
@@ -249,7 +224,6 @@ useEffect(() => {
               goToJoinProgram={()=>openProgramSheet()}
             />
 
-            {/* Mentorship Program */}
             <AccordionItem
               title="Health and Wellness Camps"
               expanded={expandedIndexes.includes(4)}
@@ -259,7 +233,6 @@ useEffect(() => {
               goToJoinProgram={()=>openProgramSheet()}
             />
 
-            {/* Mentorship Program */}
             <AccordionItem
               title="Campus to Career Program"
               expanded={expandedIndexes.includes(5)}

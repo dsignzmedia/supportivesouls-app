@@ -55,11 +55,10 @@ const Scholars = () => {
     ).start();
   }, []);
 
-  // scholars date
   // Format the date using Intl.DateTimeFormat
   const formatDate = (dateString) => {
-    if (!dateString) return ''; // Handle empty or undefined date
-    const date = new Date(dateString); // Parse the date
+    if (!dateString) return '';
+    const date = new Date(dateString); 
     return new Intl.DateTimeFormat('en-GB', {
       day: '2-digit',
       month: 'short',

@@ -76,12 +76,6 @@ const ScholarsDetails = () => {
   }, []);
     const router = useRouter();
 
-  // const openDonationDashboard = () => {
-  //   // Clear form fields
-    
-  //   // Redirect to Dashboard
-  //   router.replace('/(tabs)/Donations');
-  // };
  
   const SkeletonLoader = () => (
     <Animated.View style={[styles.skeletonCard, { opacity: fadeAnim }]}> 
